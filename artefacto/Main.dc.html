@@ -508,8 +508,14 @@ textarea.cl-in{resize:vertical;min-height:58px}
 <sc-for list="{{ctrlRefs}}" as="r" hint-placeholder-count="2">
 <button type="button" class="{{r.cls}}" aria-pressed="{{r.on}}" onClick="{{r.toggle}}"><span>{{r.text}}</span><span class="small muted">{{r.cite}}</span></button>
 </sc-for>
-<label class="lbl" for="control-manual">Control o acción definida por el auditor</label>
-<textarea id="control-manual" class="field" style="min-height:84px;" placeholder="Control recomendado por el auditor" value="{{ctrlText}}" onChange="{{onCtrlText}}"></textarea>
+<div class="lbl">Control o acción definida por el auditor</div>
+<sc-for list="{{ctrlItems}}" as="ci" hint-placeholder-count="1">
+<div style="display:flex;gap:8px;align-items:flex-start;">
+<textarea class="field" style="min-height:72px;flex:1 1 0;" aria-label="Control o acción definida por el auditor {{ci.n}}" placeholder="Control recomendado por el auditor" value="{{ci.text}}" onChange="{{ci.onText}}"></textarea>
+<button type="button" class="btn btn-danger btn-sm" aria-label="Eliminar control {{ci.n}}" onClick="{{ci.del}}">Eliminar</button>
+</div>
+</sc-for>
+<div><button type="button" class="btn btn-ghost btn-sm" onClick="{{onCtrlAdd}}">+ Agregar control</button></div>
 </div>
 </section>
 
@@ -769,7 +775,7 @@ class Component extends DCLogic {
       view: 'lista', checklist: this.newChecklist(), clConfirm: false, base: null, baseState: 'loading', evTab: 'texto', text: '', evidences: [], lib: [], pasteName: '', pasteText: '', libMsg: '',
       metaAud: '', metaProc: '', metaAuditor: '', metaFecha: '', metaAlcance: '', metaObjetivo: '', recomText: '',
       analysis: null, selReq: null, clsManual: null, corrected: '', corrDirty: false,
-      prob: 0, imp: 0, riskText: '', ctrlText: '', ctrlChosen: {}, riskChosen: {},
+      prob: 0, imp: 0, riskText: '', ctrlList: [''], ctrlChosen: {}, riskChosen: {},
       findings: [], nextId: 1, editingId: null,
       scale: { low: 4, mod: 9, high: 16 },
       conc: { adeJ: '', convJ: '', efiJ: '', adeN: '', convN: '', efiN: '' }, concFinal: '',
@@ -1367,7 +1373,7 @@ class Component extends DCLogic {
       const rkCtrl = this.rank(textUsed, ['req', 'risk']);
       if (rkCtrl.idf) a.ctrlRefs = this.sentenceRefs(rkCtrl, CTRL_RE, '', 4);
     }
-    this.upd({ analysis: a, selReq: null, clsManual: null, corrected: '', corrDirty: false, prob: 0, imp: 0, riskText: '', ctrlText: '', ctrlChosen: {}, riskChosen: {}, editingId: this._st.editingId });
+    this.upd({ analysis: a, selReq: null, clsManual: null, corrected: '', corrDirty: false, prob: 0, imp: 0, riskText: '', ctrlList: [''], ctrlChosen: {}, riskChosen: {}, editingId: this._st.editingId });
   }
 
   level(p, i) {
@@ -1484,7 +1490,7 @@ class Component extends DCLogic {
       if (!a.hadRisk) A('warn', 'No hay documento de gestión de riesgos (PR13_GQ) asignado a la etapa 5 (Riesgo).');
       else if (!a.riskRefs.length && !(s.riskText || '').trim()) A('info', 'No se identificaron en el PR13_GQ riesgos relacionados con este hallazgo. Registre manualmente el riesgo asociado o déjelo sin evaluar.');
       if (!s.prob || !s.imp) A('info', 'Probabilidad e impacto sin definir: el nivel de riesgo queda «Sin evaluar». La aplicación no asigna valores por su cuenta.');
-      if (!ctrlRefs.length && !(s.ctrlText || '').trim()) A('info', 'No hay controles adoptados ni registrados. Los controles solo pueden provenir de los documentos cargados o del auditor.');
+      if (!ctrlRefs.length && !this.ctrlOwn().length) A('info', 'No hay controles adoptados ni registrados. Los controles solo pueden provenir de los documentos cargados o del auditor.');
     }
     return { a, cands, selIdx, sel, sug, cls, auto, corrected, lvl, riskRefs, ctrlRefs, alerts: al };
   }
@@ -1496,7 +1502,7 @@ class Component extends DCLogic {
     if (!c.cls) { this.upd({ toast: 'Seleccione una clasificación antes de registrar.' }); return; }
     const n = s.editingId ? s.editingId : 'H-' + String(s.nextId).padStart(3, '0');
     const controls = c.ctrlRefs.map((r) => r.text + ' [' + r.cite + ']');
-    if ((s.ctrlText || '').trim()) controls.push((s.ctrlText || '').trim() + ' [auditor]');
+    this.ctrlOwn().forEach((x) => controls.push(x + ' [auditor]'));
     const risks = c.riskRefs.map((r) => r.text + ' [' + r.cite + ']');
     if ((s.riskText || '').trim()) risks.push((s.riskText || '').trim() + ' [auditor]');
     const prev = s.findings.find((f) => f.id === n);
@@ -1511,7 +1517,7 @@ class Component extends DCLogic {
     for (const e of s.evidences) if (e.url) { try { URL.revokeObjectURL(e.url); } catch (er) { /* nada */ } }
     this.upd({
       findings: list, nextId: prev ? s.nextId : s.nextId + 1, editingId: null, analysis: null, text: '', evidences: [], selReq: null, clsManual: null,
-      corrected: '', corrDirty: false, prob: 0, imp: 0, riskText: '', ctrlText: '', ctrlChosen: {}, riskChosen: {}, toast: 'Hallazgo ' + n + ' registrado en la matriz consolidada.'
+      corrected: '', corrDirty: false, prob: 0, imp: 0, riskText: '', ctrlList: [''], ctrlChosen: {}, riskChosen: {}, toast: 'Hallazgo ' + n + ' registrado en la matriz consolidada.'
     });
   }
 
@@ -1526,6 +1532,15 @@ class Component extends DCLogic {
     const cl = JSON.parse(JSON.stringify(this._st.checklist));
     mut(cl);
     this.upd({ checklist: cl });
+  }
+
+  ctrlOwn() {
+    return (this._st.ctrlList || []).map((x) => String(x || '').trim()).filter(Boolean);
+  }
+
+  splitCtrls(str) {
+    const list = String(str || '').split(' | ').map((x) => x.replace(/\s*\[auditor\]$/, '').trim()).filter(Boolean);
+    return list.length ? list : [''];
   }
 
   setView(view) {
@@ -1547,12 +1562,12 @@ class Component extends DCLogic {
     const c = this.current();
     let idx = -1;
     if (c && f.norma) idx = c.cands.findIndex((x) => x.docName === f.norma && x.numeral === f.numeral);
-    this.upd({ selReq: idx >= 0 ? idx : (f.norma ? -1 : null), clsManual: f.cls, corrected: f.hallazgo, corrDirty: true, prob: f.p || 0, imp: f.i || 0, riskText: f.riesgo, ctrlText: f.controles, toast: 'Editando ' + id + '. La redacción, riesgo y controles guardados se cargaron como texto editable.' });
+    this.upd({ selReq: idx >= 0 ? idx : (f.norma ? -1 : null), clsManual: f.cls, corrected: f.hallazgo, corrDirty: true, prob: f.p || 0, imp: f.i || 0, riskText: f.riesgo, ctrlList: this.splitCtrls(f.controles), toast: 'Editando ' + id + '. La redacción, riesgo y controles guardados se cargaron como texto editable.' });
   }
 
   clearWork() {
     for (const e of this._st.evidences) if (e.url) { try { URL.revokeObjectURL(e.url); } catch (er) { /* nada */ } }
-    this.upd({ text: '', evidences: [], analysis: null, selReq: null, clsManual: null, corrected: '', corrDirty: false, prob: 0, imp: 0, riskText: '', ctrlText: '', ctrlChosen: {}, riskChosen: {}, editingId: null, toast: '' });
+    this.upd({ text: '', evidences: [], analysis: null, selReq: null, clsManual: null, corrected: '', corrDirty: false, prob: 0, imp: 0, riskText: '', ctrlList: [''], ctrlChosen: {}, riskChosen: {}, editingId: null, toast: '' });
   }
 
   /* ---------- consolidado ---------- */
@@ -2128,8 +2143,8 @@ class Component extends DCLogic {
 
     v.hasAnalysis = !!cur;
     v.noAnalysis = !cur;
-    ['alerts', 'evUsed', 'cands', 'clsReasons', 'clsOptions', 'riskRefs', 'ctrlRefs', 'probOpts', 'impOpts', 'heat', 'stageConc'].forEach((k) => { v[k] = []; });
-    ['selNorma', 'selNumeral', 'selTitle', 'selText', 'selConf', 'selShared', 'correctedVal', 'clsLabel', 'clsSourceNote', 'riskText', 'ctrlText', 'riskLevel', 'riskScore', 'scaleLow', 'scaleMod', 'scaleHigh', 'registerLabel'].forEach((k) => { v[k] = ''; });
+    ['alerts', 'evUsed', 'cands', 'clsReasons', 'clsOptions', 'riskRefs', 'ctrlRefs', 'ctrlItems', 'probOpts', 'impOpts', 'heat', 'stageConc'].forEach((k) => { v[k] = []; });
+    ['selNorma', 'selNumeral', 'selTitle', 'selText', 'selConf', 'selShared', 'correctedVal', 'clsLabel', 'clsSourceNote', 'riskText', 'riskLevel', 'riskScore', 'scaleLow', 'scaleMod', 'scaleHigh', 'registerLabel'].forEach((k) => { v[k] = ''; });
     ['hasAlerts', 'hasCands', 'noCands', 'noneSelected', 'hasSel', 'noSel', 'corrDirty', 'clsIsAuto', 'clsIsManual', 'hasClsReasons', 'hasRiskRefs', 'noRiskRefs', 'hasCtrlRefs', 'noCtrlRefs', 'registerDisabled'].forEach((k) => { v[k] = false; });
     ['pickNone', 'resetCorrected', 'clsAuto', 'onRegister', 'onCorrected', 'onRiskText', 'onCtrlText', 'onScaleLow', 'onScaleMod', 'onScaleHigh'].forEach((k) => { v[k] = () => {}; });
     v.clsBg = '#ECEAE2'; v.clsFg = '#3C4A55'; v.clsSolid = '#7A8791'; v.riskBg = '#ECEAE2';
@@ -2192,8 +2207,12 @@ class Component extends DCLogic {
       v.ctrlRefs = a.ctrlRefs.map((r, i) => ({ text: r.text, cite: r.cite, on: !!s.ctrlChosen[i], cls: s.ctrlChosen[i] ? 'ref ref-on' : 'ref', toggle: () => this.upd({ ctrlChosen: Object.assign({}, this._st.ctrlChosen, { [i]: !this._st.ctrlChosen[i] }) }) }));
       v.hasCtrlRefs = a.ctrlRefs.length > 0;
       v.noCtrlRefs = a.ctrlRefs.length === 0;
-      v.ctrlText = s.ctrlText;
-      v.onCtrlText = setF('ctrlText');
+      v.ctrlItems = (s.ctrlList && s.ctrlList.length ? s.ctrlList : ['']).map((x, i) => ({
+        n: i + 1, text: x,
+        onText: (e) => { const val = e.target.value; const l = (this._st.ctrlList && this._st.ctrlList.length ? this._st.ctrlList : ['']).slice(); l[i] = val; this.upd({ ctrlList: l }); },
+        del: () => { const l = (this._st.ctrlList || []).slice(); l.splice(i, 1); this.upd({ ctrlList: l.length ? l : [''] }); }
+      }));
+      v.onCtrlAdd = () => this.upd({ ctrlList: (this._st.ctrlList && this._st.ctrlList.length ? this._st.ctrlList : ['']).concat(['']) });
       v.probOpts = [1, 2, 3, 4, 5].map((n) => ({ n, cls: s.prob === n ? 'num num-on' : 'num', pick: () => this.upd({ prob: s.prob === n ? 0 : n }) }));
       v.impOpts = [1, 2, 3, 4, 5].map((n) => ({ n, cls: s.imp === n ? 'num num-on' : 'num', pick: () => this.upd({ imp: s.imp === n ? 0 : n }) }));
       const pr = s.base;
@@ -2209,7 +2228,7 @@ class Component extends DCLogic {
       v.riskScore = cur.lvl.score ? String(cur.lvl.score) : '—';
       v.riskBg = cur.lvl.bg;
       const chosenRisk = cur.riskRefs.length + ((s.riskText || '').trim() ? 1 : 0);
-      const chosenCtrl = cur.ctrlRefs.length + ((s.ctrlText || '').trim() ? 1 : 0);
+      const chosenCtrl = cur.ctrlRefs.length + this.ctrlOwn().length;
       const ccount = {};
       s.findings.forEach((f) => { if (f.p && f.i) { const k = f.p + '-' + f.i; ccount[k] = (ccount[k] || 0) + 1; } });
       const cells = [];
