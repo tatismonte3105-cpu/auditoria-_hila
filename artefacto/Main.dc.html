@@ -79,6 +79,21 @@ textarea.field{resize:vertical;min-height:110px}
 .mrow{display:grid;grid-template-columns:78px 150px 190px minmax(200px,1fr) minmax(240px,1.4fr) minmax(180px,1fr) 130px minmax(180px,1fr) 150px;gap:14px;padding:14px 16px;border-bottom:1px solid #E4E0D3;align-items:start;font-size:13.5px;line-height:1.5}
 .mhead{background:#0E2A33;color:#FFFFFF;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:8px 8px 0 0;align-items:center}
 .pill{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;padding:4px 10px;border-radius:99px}
+.cl-bar{background:#C8C8C8;border:1px solid #6E6E6E;text-align:center;font-weight:700;font-size:13px;letter-spacing:.03em;padding:4px 8px;color:#16232B}
+.cl-grid{display:grid;grid-template-columns:260px minmax(0,1fr);border-left:1px solid #6E6E6E;border-top:1px solid #6E6E6E}
+.cl-grid > *{border-right:1px solid #6E6E6E;border-bottom:1px solid #6E6E6E;min-width:0}
+.cl-lbl{background:#C8C8C8;font-weight:700;font-size:13px;padding:4px 8px;display:flex;align-items:center;color:#16232B}
+.cl-in{width:100%;box-sizing:border-box;border:0;background:#FFFFFF;font-family:inherit;font-size:13px;line-height:1.4;color:#16232B;padding:6px 8px;margin:0;display:block}
+textarea.cl-in{resize:vertical;min-height:58px}
+.cl-in:focus{outline:2px solid #0B5A66;outline-offset:-2px;background:#F4F9F9}
+.cl-row{display:grid;grid-template-columns:200px minmax(160px,1.2fr) minmax(150px,1fr) 44px 44px 44px 44px minmax(220px,1.6fr) 52px;border-left:1px solid #6E6E6E}
+.cl-row > *{border-right:1px solid #6E6E6E;border-bottom:1px solid #6E6E6E;min-width:0}
+.cl-head > *{background:#C8C8C8;font-weight:700;font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;padding:6px 4px;color:#16232B}
+.cl-mk{width:100%;height:100%;min-height:58px;border:0;background:#FFFFFF;font-weight:700;font-size:16px;color:#0E2A33;cursor:pointer;padding:0}
+.cl-mk:hover{background:#F1EFE7}
+.cl-mk-on{background:#E1EEF0}
+.cl-x{width:100%;height:100%;min-height:58px;border:0;background:#FFFFFF;color:#9B1C1C;font-size:12px;font-weight:600;cursor:pointer;padding:0}
+.cl-x:hover{background:#FBE9E7}
 .paper{background:#FFFFFF;border:1px solid #D9D5C9;border-radius:4px;padding:56px 64px;box-shadow:0 2px 10px rgba(22,35,43,.08);max-width:880px;margin:0 auto}
 </style>
 </helmet>
@@ -115,6 +130,72 @@ textarea.field{resize:vertical;min-height:110px}
 <div style="font-size:14px;color:#0B3C45;flex:1 1 520px;"><strong>Regla de fuente única.</strong> La aplicación solo usa como fundamento normativo los documentos que usted cargue. No inventa normas, numerales, requisitos, evidencias, fechas, responsables, riesgos, controles ni resultados: cuando falta información muestra una alerta de validación del auditor.</div>
 <div class="small muted">{{persistNote}}</div>
 </div>
+
+<sc-if value="{{vLista}}" hint-placeholder-val="{{false}}">
+<section class="panel" style="display:flex;flex-direction:column;gap:14px;" aria-label="Lista de verificación de auditorías internas">
+<div style="display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-end;justify-content:space-between;">
+<div><div class="eyebrow">Planeación de la auditoría</div><h2 class="h2">LISTA DE VERIFICACIÓN DE AUDITORIAS INTERNAS</h2></div>
+<div style="display:grid;grid-template-columns:150px 70px 70px 70px;border-left:1px solid #6E6E6E;border-top:1px solid #6E6E6E;">
+<div class="cl-lbl" style="justify-content:center;border-right:1px solid #6E6E6E;border-bottom:1px solid #6E6E6E;">Auditoría No</div>
+<div class="cl-lbl" style="grid-column:span 3;justify-content:center;border-right:1px solid #6E6E6E;border-bottom:1px solid #6E6E6E;">Fecha</div>
+<div style="border-right:1px solid #6E6E6E;border-bottom:1px solid #6E6E6E;"><input type="text" class="cl-in" aria-label="Auditoría número" value="{{clAuditNo}}" onChange="{{onClAuditNo}}"></div>
+<div style="border-right:1px solid #6E6E6E;border-bottom:1px solid #6E6E6E;"><input type="text" class="cl-in" aria-label="Día" placeholder="DD" value="{{clDia}}" onChange="{{onClDia}}"></div>
+<div style="border-right:1px solid #6E6E6E;border-bottom:1px solid #6E6E6E;"><input type="text" class="cl-in" aria-label="Mes" placeholder="MM" value="{{clMes}}" onChange="{{onClMes}}"></div>
+<div style="border-right:1px solid #6E6E6E;border-bottom:1px solid #6E6E6E;"><input type="text" class="cl-in" aria-label="Año" placeholder="AAAA" value="{{clAnio}}" onChange="{{onClAnio}}"></div>
+</div>
+</div>
+<div class="cl-bar">INFORMACIÓN GENERAL</div>
+<div class="cl-grid">
+<label class="cl-lbl" for="cl-elab">ELABORADA POR:</label><div><input id="cl-elab" type="text" class="cl-in" value="{{clElaborada}}" onChange="{{onClElaborada}}"></div>
+<label class="cl-lbl" for="cl-proc">PROCESO A AUDITAR:</label><div><input id="cl-proc" type="text" class="cl-in" value="{{clProceso}}" onChange="{{onClProceso}}"></div>
+<label class="cl-lbl" for="cl-aud">CARGO Y NOMBRE DE LOS AUDITADOS:</label><div><input id="cl-aud" type="text" class="cl-in" value="{{clAuditados}}" onChange="{{onClAuditados}}"></div>
+<label class="cl-lbl" for="cl-fej">FECHA DE EJECUCIÓN:</label><div><input id="cl-fej" type="text" class="cl-in" value="{{clFechaEj}}" onChange="{{onClFechaEj}}"></div>
+<label class="cl-lbl" for="cl-lug">LUGAR DE EJECUCIÓN:</label><div><input id="cl-lug" type="text" class="cl-in" value="{{clLugar}}" onChange="{{onClLugar}}"></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px;font-weight:700;font-size:13px;"><span>O = Oportunidad</span><span>NC = No Conforme</span><span>OB = Observación</span><span>F = Fortalezas</span></div>
+<div class="cl-bar">LISTA DE VERIFICACIÓN</div>
+<div style="overflow-x:auto;margin-top:-14px;">
+<div role="table" aria-label="Lista de verificación" style="min-width:1120px;border-top:1px solid #6E6E6E;">
+<div role="row" class="cl-row cl-head">
+<div role="columnheader">Normatividad/requisito/ componente por auditar</div>
+<div role="columnheader">Pregunta</div>
+<div role="columnheader">Documentos – evidencia</div>
+<div role="columnheader">NC</div>
+<div role="columnheader">O</div>
+<div role="columnheader">OB</div>
+<div role="columnheader">F</div>
+<div role="columnheader">Hallazgos o anotaciones</div>
+<div role="columnheader"><span class="small">Quitar</span></div>
+</div>
+<sc-for list="{{clSections}}" as="sec" hint-placeholder-count="1">
+<div role="row" style="display:flex;align-items:stretch;border-left:1px solid #6E6E6E;border-right:1px solid #6E6E6E;border-bottom:1px solid #6E6E6E;">
+<input type="text" class="cl-in" style="flex:1 1 0;text-align:center;font-weight:700;font-size:14px;padding:10px;" aria-label="Título de la sección" placeholder="Nombre de la sección o proceso" value="{{sec.title}}" onChange="{{sec.onTitle}}">
+<button type="button" class="btn btn-ghost btn-sm" style="border-radius:0;border-width:0 0 0 1px;border-color:#6E6E6E;" onClick="{{sec.addRow}}">+ Fila</button>
+<sc-if value="{{sec.canDel}}" hint-placeholder-val="{{false}}"><button type="button" class="btn btn-danger btn-sm" style="border-radius:0;border-width:0 0 0 1px;border-color:#6E6E6E;" onClick="{{sec.del}}">Eliminar sección</button></sc-if>
+</div>
+<sc-for list="{{sec.rows}}" as="r" hint-placeholder-count="4">
+<div role="row" class="cl-row">
+<div role="cell"><textarea class="cl-in" aria-label="Normatividad o requisito, fila {{r.n}}" value="{{r.req}}" onChange="{{r.onReq}}"></textarea></div>
+<div role="cell"><textarea class="cl-in" aria-label="Pregunta, fila {{r.n}}" value="{{r.preg}}" onChange="{{r.onPreg}}"></textarea></div>
+<div role="cell"><textarea class="cl-in" aria-label="Documentos o evidencia, fila {{r.n}}" value="{{r.docs}}" onChange="{{r.onDocs}}"></textarea></div>
+<sc-for list="{{r.marks}}" as="m" hint-placeholder-count="4">
+<div role="cell"><button type="button" class="{{m.cls}}" aria-pressed="{{m.on}}" aria-label="{{m.aria}}" onClick="{{m.pick}}">{{m.txt}}</button></div>
+</sc-for>
+<div role="cell"><textarea class="cl-in" aria-label="Hallazgos o anotaciones, fila {{r.n}}" value="{{r.notes}}" onChange="{{r.onNotes}}"></textarea></div>
+<div role="cell"><button type="button" class="cl-x" aria-label="Quitar fila {{r.n}}" onClick="{{r.del}}">✕</button></div>
+</div>
+</sc-for>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+<button type="button" class="btn btn-ghost" onClick="{{onClAddSection}}">+ Agregar sección</button>
+<sc-if value="{{clNoConfirm}}" hint-placeholder-val="{{true}}"><button type="button" class="btn btn-danger" onClick="{{onClAskClear}}">Limpiar lista</button></sc-if>
+<sc-if value="{{clConfirm}}" hint-placeholder-val="{{false}}"><span class="small">¿Borrar todo el contenido de la lista?</span><button type="button" class="btn btn-danger" onClick="{{onClClear}}">Sí, limpiar</button><button type="button" class="btn btn-ghost" onClick="{{onClCancel}}">Cancelar</button></sc-if>
+<span class="small muted">Todo se guarda automáticamente en este navegador. Marque con un clic NC, O, OB o F en cada fila; otro clic la desmarca.</span>
+</div>
+</section>
+</sc-if>
 
 <sc-if value="{{vHallazgo}}" hint-placeholder-val="{{false}}">
 <div class="chain" aria-label="Ruta de análisis">
@@ -678,14 +759,14 @@ const ROLES = {
   risk: { label: 'Riesgo (etapa 5)', short: 'Riesgo' },
   method: { label: 'Solo consulta', short: 'Consulta' }
 };
-const PKEYS = ['lib', 'findings', 'metaAud', 'metaProc', 'metaAuditor', 'metaFecha', 'metaAlcance', 'metaObjetivo', 'recomText', 'scale', 'conc', 'concFinal', 'nextId'];
+const PKEYS = ['lib', 'findings', 'metaAud', 'metaProc', 'metaAuditor', 'metaFecha', 'metaAlcance', 'metaObjetivo', 'recomText', 'checklist', 'scale', 'conc', 'concFinal', 'nextId'];
 const DEF_OBJ = 'Evaluar la conformidad y desempeño del Sistema Integrado de Gestión del Hospital Infantil Los Ángeles frente a los requisitos de las normas NTC-ISO 9001:2015, NTC-ISO 14001:2015 e ISO 45001:2018, con base en la evidencia objetiva recopilada durante la auditoría interna.';
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this._st = {
-      view: 'hallazgo', base: null, baseState: 'loading', evTab: 'texto', text: '', evidences: [], lib: [], pasteName: '', pasteText: '', libMsg: '',
+      view: 'lista', checklist: this.newChecklist(), clConfirm: false, base: null, baseState: 'loading', evTab: 'texto', text: '', evidences: [], lib: [], pasteName: '', pasteText: '', libMsg: '',
       metaAud: '', metaProc: '', metaAuditor: '', metaFecha: '', metaAlcance: '', metaObjetivo: '', recomText: '',
       analysis: null, selReq: null, clsManual: null, corrected: '', corrDirty: false,
       prob: 0, imp: 0, riskText: '', ctrlText: '', ctrlChosen: {}, riskChosen: {},
@@ -715,7 +796,7 @@ class Component extends DCLogic {
         patch.lib = this._st.lib.filter((x) => x.base).concat(this.dropBaseDups(patch.lib));
         this._idc = 1 + Math.max(0, ...d.lib.map((x) => parseInt(String(x.id).slice(1), 10) || 0));
       }
-      ['findings', 'metaAud', 'metaProc', 'metaAuditor', 'metaFecha', 'metaAlcance', 'metaObjetivo', 'recomText', 'scale', 'conc', 'concFinal', 'nextId'].forEach((k) => { if (d[k] !== undefined) patch[k] = d[k]; });
+      ['findings', 'metaAud', 'metaProc', 'metaAuditor', 'metaFecha', 'metaAlcance', 'metaObjetivo', 'recomText', 'checklist', 'scale', 'conc', 'concFinal', 'nextId'].forEach((k) => { if (d[k] !== undefined) patch[k] = d[k]; });
       this.upd(patch, true);
     } catch (e) {
       this.upd({ persistOk: false }, true);
@@ -740,7 +821,7 @@ class Component extends DCLogic {
         v: 1,
         lib: s.lib.filter((d) => !d.base).map((d) => ({ id: d.id, name: d.name, text: d.text, role: d.role })),
         findings: s.findings, metaAud: s.metaAud, metaProc: s.metaProc, metaAuditor: s.metaAuditor, metaFecha: s.metaFecha, metaAlcance: s.metaAlcance,
-        metaObjetivo: s.metaObjetivo, recomText: s.recomText, scale: s.scale, conc: s.conc, concFinal: s.concFinal, nextId: s.nextId
+        metaObjetivo: s.metaObjetivo, recomText: s.recomText, checklist: s.checklist, scale: s.scale, conc: s.conc, concFinal: s.concFinal, nextId: s.nextId
       };
       window.localStorage.setItem(LS_KEY, JSON.stringify(payload));
       if (s.persistOk !== true) this.upd({ persistOk: true }, true);
@@ -1434,6 +1515,19 @@ class Component extends DCLogic {
     });
   }
 
+  /* ---------- lista de verificación ---------- */
+  newChecklist() {
+    const rows = [];
+    for (let i = 1; i <= 8; i++) rows.push({ id: 'r' + i, req: '', preg: '', docs: '', cls: '', notes: '' });
+    return { seq: 9, auditNo: '', dia: '', mes: '', anio: '', elaborada: '', proceso: '', auditados: '', fechaEj: '', lugar: '', sections: [{ id: 's1', title: 'GESTION DE RECURSOS FISICOS (MANTENIMIENTO)', rows }] };
+  }
+
+  updCL(mut) {
+    const cl = JSON.parse(JSON.stringify(this._st.checklist));
+    mut(cl);
+    this.upd({ checklist: cl });
+  }
+
   setView(view) {
     this.upd({ view: view, toast: '' });
     this.scrollTop();
@@ -1940,11 +2034,44 @@ class Component extends DCLogic {
     v.persistBad = s.persistOk === false;
 
     const navDefs = [
-      ['hallazgo', 'Nuevo hallazgo', 0], ['docs', 'Normas y documentos', s.lib.length], ['resultados', 'Resultados', 0],
+      ['lista', 'LISTA DE VERIFICACIÓN DE AUDITORIAS INTERNAS', 0], ['hallazgo', 'Nuevo hallazgo', 0], ['docs', 'Normas y documentos', s.lib.length], ['resultados', 'Resultados', 0],
       ['matriz', 'Matriz consolidada', st.n], ['conclusion', 'Conclusión', 0], ['informe', 'Informe', 0]
     ];
     v.navTabs = navDefs.map((n) => ({ label: n[1], cnt: n[2], hasCnt: n[2] > 0, on: s.view === n[0], cls: s.view === n[0] ? 'navt navt-on' : 'navt', pick: () => this.setView(n[0]) }));
     v.vHallazgo = s.view === 'hallazgo';
+    v.vLista = s.view === 'lista';
+    const cl = s.checklist;
+    const clF = (k) => (e) => { const val = e.target.value; this.updCL((c) => { c[k] = val; }); };
+    [['clAuditNo', 'auditNo'], ['clDia', 'dia'], ['clMes', 'mes'], ['clAnio', 'anio'], ['clElaborada', 'elaborada'], ['clProceso', 'proceso'], ['clAuditados', 'auditados'], ['clFechaEj', 'fechaEj'], ['clLugar', 'lugar']].forEach(([vk, k]) => {
+      v[vk] = cl[k] || '';
+      v['on' + vk.charAt(0).toUpperCase() + vk.slice(1)] = clF(k);
+    });
+    const MK = [['NC', 'NC', 'No conforme'], ['OM', 'O', 'Oportunidad'], ['OB', 'OB', 'Observación'], ['FO', 'F', 'Fortaleza']];
+    v.clSections = cl.sections.map((sec, si) => ({
+      title: sec.title,
+      onTitle: (e) => { const val = e.target.value; this.updCL((c) => { c.sections[si].title = val; }); },
+      addRow: () => this.updCL((c) => { c.sections[si].rows.push({ id: 'r' + (c.seq++), req: '', preg: '', docs: '', cls: '', notes: '' }); }),
+      canDel: cl.sections.length > 1,
+      del: () => this.updCL((c) => { c.sections.splice(si, 1); }),
+      rows: sec.rows.map((r, ri) => {
+        const rf = (k) => (e) => { const val = e.target.value; this.updCL((c) => { c.sections[si].rows[ri][k] = val; }); };
+        return {
+          n: ri + 1, req: r.req, preg: r.preg, docs: r.docs, notes: r.notes,
+          onReq: rf('req'), onPreg: rf('preg'), onDocs: rf('docs'), onNotes: rf('notes'),
+          marks: MK.map(([k, l, name]) => ({
+            txt: r.cls === k ? 'X' : '', on: r.cls === k, cls: r.cls === k ? 'cl-mk cl-mk-on' : 'cl-mk', aria: name + ' (' + l + '), fila ' + (ri + 1),
+            pick: () => this.updCL((c) => { const x = c.sections[si].rows[ri]; x.cls = x.cls === k ? '' : k; })
+          })),
+          del: () => this.updCL((c) => { c.sections[si].rows.splice(ri, 1); })
+        };
+      })
+    }));
+    v.onClAddSection = () => this.updCL((c) => { const rows = []; for (let i = 0; i < 4; i++) rows.push({ id: 'r' + (c.seq++), req: '', preg: '', docs: '', cls: '', notes: '' }); c.sections.push({ id: 's' + (c.seq++), title: '', rows }); });
+    v.clConfirm = !!s.clConfirm;
+    v.clNoConfirm = !s.clConfirm;
+    v.onClAskClear = () => this.upd({ clConfirm: true });
+    v.onClCancel = () => this.upd({ clConfirm: false });
+    v.onClClear = () => this.upd({ checklist: this.newChecklist(), clConfirm: false });
     v.vDocs = s.view === 'docs';
     v.vResultados = s.view === 'resultados';
     v.vMatriz = s.view === 'matriz';
