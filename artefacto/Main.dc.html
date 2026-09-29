@@ -340,7 +340,8 @@ textarea.field{resize:vertical;min-height:110px}
 <div class="stage-n" aria-hidden="true">4</div>
 <div class="stage-body">
 <div><div class="eyebrow">Hallazgo</div><div class="h3">Redacción corregida</div></div>
-<div class="small muted">Se ordena en evidencia, criterio y hallazgo, corrigiendo espacios, puntuación y mayúsculas. Ningún hecho se agrega: el contenido proviene del texto del auditor y del requisito seleccionado. Puede editarla.</div>
+<div class="al al-info" style="flex-direction:column;gap:4px;"><div><strong>Estructura aplicada · {{clsLabel}}:</strong> {{structText}}</div><div class="small">Ejemplo: {{structEx}}</div></div>
+<div class="small muted">La redacción se arma según la clasificación de la etapa 3, con el texto del auditor y el requisito seleccionado. Lo que el texto no aporta queda entre corchetes para que el auditor lo complete: ningún hecho se inventa. Puede editarla.</div>
 <label class="lbl" for="hallazgo-corregido">Redacción del hallazgo</label>
 <textarea id="hallazgo-corregido" class="field" style="min-height:190px;" value="{{correctedVal}}" onChange="{{onCorrected}}"></textarea>
 <sc-if value="{{corrDirty}}" hint-placeholder-val="{{false}}"><div><button type="button" class="btn btn-ghost btn-sm" onClick="{{resetCorrected}}">Restablecer redacción automática</button></div></sc-if>
@@ -617,10 +618,15 @@ const STOP = new Set(('a al algo ante bajo con contra de del desde e el ella ell
 const CUES = {
   NC: [
     /no cumpl\w*|no se cumpl\w*|incumpl\w*|no conform\w*|inconform\w*/g,
-    /no se (?:evidenci|encontr|realiz|cuenta|dispon|ha |han |identific|diligenci|document|demuestr|aplic|registr|verific|ejecut|program|observ)\w*/g,
+    /no se (?:evidenci|encontr|realiz|cuenta|dispon|ha |han |identific|diligenci|document|demuestr|aplic|registr|verific|ejecut|program|observ|inclu|defin|establec|actualiz|socializ|firm|entreg|report|evalu|hiz|hace|llev|tom|presen|mantien|conserv|comunic|cumpl)\w*/g,
     /\bno (?:existe|existen|cuenta|cuentan|dispone|disponen|evidencia|evidencian|hay|tiene|tienen|esta|estan|fue|fueron)\b/g,
     /\b(?:ausencia|carece|carecen|inexistent\w*|vencid\w*|desactualizad\w*|incomplet\w*|sin (?:evidencia|registro|firma|soporte|diligenciar|control|documentar|protocolo|procedimiento))\b/g,
-    /falta de \w+/g
+    /falta de \w+/g,
+    /\b(?:repetid\w*|reiterad\w*|recurrent\w*|nuevamente|otra vez)\b/g,
+    /diferente a lo (?:documentad|establecid|definid)\w*|no corresponde (?:a|con) lo (?:documentad|establecid|definid)\w*|difiere\w* de lo|no coincide\w*/g,
+    /desconoce\w*|no (?:tiene|tienen) conocimiento|no conoce\w*/g,
+    /contradic\w*/g,
+    /no se consign\w*|sin consignar|sin diligenciar|no (?:esta|estan) diligenciad\w*|registros? incomplet\w*/g
   ],
   FO: [
     /fortaleza\w*|buenas? practica\w*|destac\w*|sobresal\w*|ejemplar\w*|excelente\w*/g,
@@ -628,10 +634,10 @@ const CUES = {
     /\badecuadamente\b|\beficaz\w*/g
   ],
   OM: [
-    /oportunidad\w* de mejora|se recomienda\w*|se sugiere\w*|podria\w*|seria (?:conveniente|recomendable|oportuno|util)|susceptible\w* de mejora|\bmejorar\b|\boptimizar\b|\bfortalecer\b|\brecomendable\b/g
+    /oportunidad\w* de mejora|se recomienda\w*|se sugiere\w*|podria\w* (?:mejorar\w*|fortalecer\w*|optimizar\w*)|seria (?:conveniente|recomendable|oportuno|util)|susceptible\w* de mejora|\bmejorar\b|\boptimizar\b|\bfortalecer\b|\brecomendable\b/g
   ],
   OB: [
-    /se observ\w*|se percibe\w*|\bposible\w*|\bpotencial\w*|\beventual\w*|riesgo de|\baclarar\b|pendiente de|no se pudo verificar/g
+    /se observ\w*|se percibe\w*|podria\w* (?:impactar|afectar|generar|ocasionar|causar|poner|comprometer|materializar)\w*|\bposible\w*|\bpotencial\w*|\beventual\w*|riesgo de|\baclarar\b|pendiente de|no se pudo verificar/g
   ]
 };
 const RISK_RE = /riesg|peligr|consecuenc|evento adverso|incidente|dano|vulnerab|amenaza|afecta|seguridad del paciente/;
@@ -1120,7 +1126,11 @@ class Component extends DCLogic {
     const c = { NC: cues.NC.length, FO: cues.FO.length, OM: cues.OM.length, OB: cues.OB.length };
     let cls = null;
     let note = '';
-    if (c.NC > 0) {
+    const weakNC = c.NC > 0 && cues.NC.every((x) => /^falta de /.test(x.key)) && c.OB > 0;
+    if (weakNC) {
+      cls = 'OB';
+      note = 'El texto describe una debilidad («falta de…») con un impacto potencial y no un incumplimiento verificado: se propone Observación. Si hay incumplimiento de un requisito, el auditor puede cambiarla a No conformidad.';
+    } else if (c.NC > 0) {
       if (hasReq) cls = 'NC';
       else { cls = 'OB'; note = 'El texto contiene indicios de incumplimiento, pero no hay un requisito identificado en los documentos cargados. Una no conformidad exige un requisito verificable; se propone Observación hasta que el auditor valide el criterio.'; }
       if (c.FO > 0) note += (note ? ' ' : '') + 'El texto también contiene expresiones de cumplimiento: revise que la redacción no sea contradictoria.';
@@ -1255,21 +1265,70 @@ class Component extends DCLogic {
     return { name, score: sc, bg: LEVEL_BG[name] };
   }
 
+  // Divide el texto del auditor en «aspecto» y «complemento» (beneficio o impacto) usando el primer conector encontrado.
+  // keep: el conector forma parte del complemento (p. ej. «permite…», «podría…»).
+  splitAt(text, conns) {
+    const low = text.toLowerCase();
+    let best = null;
+    for (const c of conns) {
+      const re = new RegExp('(^|[\\s,;(])(' + c.re + ')(?=[\\s,.;:]|$)', 'i');
+      const m = re.exec(low);
+      if (m && (!best || m.index < best.idx)) best = { idx: m.index + m[1].length, len: m[2].length, keep: c.keep };
+    }
+    if (!best) return { aspect: text, rest: '' };
+    const aspect = text.slice(0, best.idx).replace(/[\s,;:.\-–]+$/, '').replace(/\s+(?:que|y|lo)$/i, '').trim();
+    const rest = text.slice(best.keep ? best.idx : best.idx + best.len).replace(/^[\s,;:]+/, '').replace(/[\s.]+$/, '').trim();
+    if (!aspect) return { aspect: text, rest: '' };
+    return { aspect, rest };
+  }
+
+  lc(x) {
+    return x && !/^[A-ZÁÉÍÓÚÑ]{2,}/.test(x) ? x.charAt(0).toLowerCase() + x.slice(1) : x;
+  }
+
+  normShort(docName) {
+    const m = /^(.*?\d{4,5}(?::\d{4})?)/.exec(docName || '');
+    return m ? m[1].trim() : (docName || '');
+  }
+
   compose(a, sel, cls) {
-    const lines = [];
-    lines.push('EVIDENCIA: ' + (this.tidy(a.brief) || '[Sin texto de evidencia]'));
-    if (sel) lines.push('CRITERIO: ' + sel.docName + ', numeral ' + sel.numeral + (sel.title ? ' (' + sel.title.replace(/\.+$/, '') + ')' : '') + ': «' + sel.text.slice(0, 420) + (sel.text.length > 420 ? '…' : '') + '»');
-    else lines.push('CRITERIO: [No identificado en los documentos cargados. Requiere validación del auditor.]');
-    const nom = sel ? 'el requisito del numeral ' + sel.numeral + ' de ' + sel.docName : 'un requisito que el auditor debe identificar';
-    const del = sel ? 'del requisito del numeral ' + sel.numeral + ' de ' + sel.docName : 'de un requisito que el auditor debe identificar';
-    let h;
-    if (cls === 'NC') h = 'Se identifica una no conformidad: la evidencia descrita indica incumplimiento ' + del + '.';
-    else if (cls === 'FO') h = 'Se identifica una fortaleza: la evidencia descrita indica cumplimiento ' + del + '.';
-    else if (cls === 'OM') h = 'Se identifica una oportunidad de mejora relacionada con ' + nom + '.';
-    else if (cls === 'OB') h = 'Se registra una observación relacionada con ' + nom + '.';
-    else h = '[Clasificación pendiente: el auditor debe definirla.]';
-    lines.push('HALLAZGO: ' + h);
-    return lines.join('\n');
+    const ev = this.tidy(a.brief).replace(/[.\s]+$/, '');
+    if (!ev) return '[Sin texto de evidencia]';
+    const strip = (x, re) => { const y = x.replace(re, '').trim(); return y ? y.charAt(0).toUpperCase() + y.slice(1) : x; };
+    if (cls === 'NC') {
+      // Evidencia + incumplimiento + requisito incumplido
+      const req = sel ? this.normShort(sel.docName) + ' (' + sel.numeral + ')' : '[Norma y numeral del requisito incumplido: por validar]';
+      return ev + '. ' + req + '.';
+    }
+    if (cls === 'FO') {
+      // Aspecto relevante o fortaleza + beneficio obtenido en el sistema o la estrategia (presente)
+      const sp = this.splitAt(ev, [
+        { re: 'porque', keep: false }, { re: 'ya que', keep: false }, { re: 'puesto que', keep: false }, { re: 'debido a que', keep: false },
+        { re: 'lo cual|lo que', keep: false },
+        { re: 'permite\\w*|contribuye\\w*|favorece\\w*|garantiza\\w*|facilita\\w*|asegura\\w*|fortalece\\w*|mejora(?:ndo)?', keep: true }
+      ]);
+      const aspect = strip(sp.aspect, /^(?:fortaleza\s*[:.-]\s*|se destaca\w*\s+(?:como fortaleza\s+)?|se evidencia como fortaleza\s+)/i);
+      return aspect + ', porque ' + (sp.rest ? this.lc(sp.rest) : '[beneficio que obtiene el sistema o la estrategia, en presente]') + '.';
+    }
+    if (cls === 'OM') {
+      // Susceptible de mejorar + para lo cual + beneficio en futuro
+      const sp = this.splitAt(ev, [
+        { re: 'para lo cual', keep: false }, { re: 'lo cual|lo que', keep: false }, { re: 'con el fin de|a fin de|para que', keep: false },
+        { re: 'permitir(?:á|ía|a|ia)n?|contribuir(?:á|ía|a|ia)n?|facilitar(?:á|ía|a|ia)n?|mejorar(?:á|ía|a|ia)n?|garantizar(?:á|ía|a|ia)n?', keep: true }
+      ]);
+      const aspect = strip(sp.aspect.replace(/\s+(?:podr(?:í|i)a|puede|debe|deber(?:í|i)a)\s+(?:mejorar\w*|fortalecer\w*|optimizar\w*)$/i, '').replace(/\s+(?:es\s+)?susceptible de mejora\w*$/i, ''), /^(?:oportunidad de mejora\s*[:.-]\s*|(?:es\s+)?susceptible de mejora(?:r)?\s*(?:en\s+)?|se recomienda\s+(?:mejorar\s+)?|se sugiere\s+(?:mejorar\s+)?|mejorar\s+|fortalecer\s+|optimizar\s+)/i);
+      return 'Es susceptible de mejorar ' + this.lc(aspect) + ', para lo cual ' + (sp.rest ? this.lc(sp.rest) : '[beneficio esperado en futuro: «permitirá…»]') + '.';
+    }
+    if (cls === 'OB') {
+      // Aspecto a mejorar o debilidad + impacto que se generaría en el proceso, sistema o estrategia
+      const sp = this.splitAt(ev, [
+        { re: 'lo cual|lo que', keep: false },
+        { re: 'podr(?:í|i)a\\w*|afectar(?:ía|ia|á|a)?\\w*|impactar(?:ía|ia|á|a)?\\w*|generar(?:ía|ia|á|a)?\\w*|ocasionar(?:ía|ia|á|a)?\\w*|poniendo en riesgo|con riesgo de', keep: true }
+      ]);
+      const aspect = strip(sp.aspect, /^(?:observaci(?:ó|o)n\s*[:.-]\s*|debilidad\s*[:.-]\s*)/i);
+      return aspect + ', que ' + (sp.rest ? this.lc(sp.rest) : 'podría impactar en [impacto que se generaría en el proceso, sistema o estrategia]') + '.';
+    }
+    return ev + '. [Clasificación pendiente: el auditor debe definirla para aplicar la estructura de redacción.]';
   }
 
   current() {
@@ -1298,6 +1357,7 @@ class Component extends DCLogic {
       if (sel && sel.numeral === 's/n') A('warn', 'El numeral no pudo identificarse en el documento cargado (numeral s/n). Requiere validación del auditor.');
       if (cands.length > 1 && s.selReq === null && cands[1].score >= 0.85 * cands[0].score && cands[1].numeral !== cands[0].numeral) A('warn', 'Hay varios requisitos con puntajes similares (' + cands[0].numeral + ' y ' + cands[1].numeral + '). Elija el que corresponda.');
       if (!cls) A('warn', 'No se detectaron expresiones que permitan clasificar el hallazgo. El auditor debe seleccionar la clasificación.');
+      if (/\[[^\]]+\]/.test(corrected)) A('warn', 'La redacción del hallazgo tiene partes entre corchetes que el texto del auditor no aporta. Complételas en la etapa 4: la aplicación no las inventa.');
       if (sug.note && !s.clsManual) A('warn', sug.note);
       if (cls === 'NC' && !sel) A('crit', 'Una no conformidad requiere requisito identificado. Seleccione el requisito o cambie la clasificación.');
       for (const e of s.evidences) {
@@ -1800,6 +1860,15 @@ class Component extends DCLogic {
       v.selText = cur.sel ? cur.sel.text : '';
       v.selConf = cur.sel ? cur.sel.conf + ' · ' + cur.sel.nShared + ' términos coincidentes' : '';
       v.selShared = cur.sel ? cur.sel.shared.slice(0, 10).join(', ') : '';
+      const ST = {
+        NC: ['Evidencia + incumplimiento + requisito incumplido.', 'En la revisión por la dirección del 14 de julio de 2021 no se incluyó la información relacionada con las decisiones y acciones relacionadas con las oportunidades de mejora. NTC-ISO 9001:2015 (9.3.3.a).'],
+        FO: ['Aspecto relevante o fortaleza + beneficio obtenido en el sistema o la estrategia, en presente.', 'El liderazgo de la alta dirección del sistema de gestión, porque permite la mejora de los procesos y la competencia de su personal.'],
+        OM: ['Susceptible de mejorar + para lo cual + beneficios en futuro.', 'Es susceptible de mejorar la infraestructura para la prestación de los servicios, para lo cual permitirá contar con espacios agradables y de confort para el cliente.'],
+        OB: ['Aspecto a mejorar o debilidad + impacto que se generaría en el proceso, sistema o estrategia.', 'Se evidencia falta de planificación de los cambios relacionados con la reposición e incursión de tecnología biomédica, que podría impactar en la ocurrencia de posibles eventos adversos.']
+      };
+      const stc = ST[cur.cls] || ['Defina la clasificación en la etapa 3 para aplicar la estructura.', '—'];
+      v.structText = stc[0];
+      v.structEx = stc[1];
       v.correctedVal = cur.corrected;
       v.onCorrected = (e) => { const val = e.target.value; this.upd({ corrected: val, corrDirty: true }); };
       v.resetCorrected = () => this.upd({ corrDirty: false, corrected: '' });
