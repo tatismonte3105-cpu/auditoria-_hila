@@ -341,9 +341,9 @@ textarea.field{resize:vertical;min-height:110px}
 <div class="stage-body">
 <div><div class="eyebrow">Hallazgo</div><div class="h3">Redacción corregida</div></div>
 <div class="al al-info" style="flex-direction:column;gap:4px;"><div><strong>Estructura aplicada · {{clsLabel}}:</strong> {{structText}}</div><div class="small">Ejemplo: {{structEx}}</div></div>
-<div class="small muted">La redacción se arma según la clasificación de la etapa 3, con el texto del auditor y el requisito seleccionado. Lo que el texto no aporta queda entre corchetes para que el auditor lo complete: ningún hecho se inventa. Puede editarla.</div>
+<div class="small muted">La redacción inicia siempre con la introducción fija de la auditoría y continúa con el hallazgo, armado según la clasificación de la etapa 3, con el texto del auditor y el requisito seleccionado. Lo que el texto no aporta queda entre corchetes para que el auditor lo complete: ningún hecho se inventa. Puede editarla.</div>
 <label class="lbl" for="hallazgo-corregido">Redacción del hallazgo</label>
-<textarea id="hallazgo-corregido" class="field" style="min-height:190px;" value="{{correctedVal}}" onChange="{{onCorrected}}"></textarea>
+<textarea id="hallazgo-corregido" class="field" style="min-height:260px;" value="{{correctedVal}}" onChange="{{onCorrected}}"></textarea>
 <sc-if value="{{corrDirty}}" hint-placeholder-val="{{false}}"><div><button type="button" class="btn btn-ghost btn-sm" onClick="{{resetCorrected}}">Restablecer redacción automática</button></div></sc-if>
 </div>
 </section>
@@ -647,6 +647,7 @@ const SUFFIX = ['aciones', 'amientos', 'imientos', 'idades', 'adores', 'acion', 
 const LS_KEY = 'hila_v3_auditoria';
 const BASE_URL = '/_blob/889af1251e9b47e3f4c978339788035b';
 const BASE_DUP_RE = /9001|14001|45001|pr ?13/;
+const INTRO = 'Durante la auditoría interna realizada en el proceso de Atención al Usuario del Hospital Infantil Los Ángeles de Pasto, el auditor observó la interacción comunicativa entre los usuarios y el personal del servicio de atención al cliente, sin que se registraran en la redacción original el período auditado, el tamaño de la muestra revisada, el método de recolección de evidencia ni los criterios objetivos empleados para la valoración.';
 const ROLES = {
   req: { label: 'Requisito (etapa 2)', short: 'Requisito' },
   risk: { label: 'Riesgo (etapa 5)', short: 'Riesgo' },
@@ -1292,6 +1293,11 @@ class Component extends DCLogic {
   }
 
   compose(a, sel, cls) {
+    const body = this.composeBody(a, sel, cls);
+    return /^\[Sin texto/.test(body) ? body : INTRO + '\n\n' + body;
+  }
+
+  composeBody(a, sel, cls) {
     const ev = this.tidy(a.brief).replace(/[.\s]+$/, '');
     if (!ev) return '[Sin texto de evidencia]';
     const strip = (x, re) => { const y = x.replace(re, '').trim(); return y ? y.charAt(0).toUpperCase() + y.slice(1) : x; };
