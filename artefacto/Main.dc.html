@@ -1411,46 +1411,61 @@ class Component extends DCLogic {
     return m ? m[1].trim() : (docName || '');
   }
 
+  /* ---------- redacción del hallazgo (estilo de auditoría hospitalaria) ---------- */
+  // ¿El fragmento es una oración con verbo conjugado? Entonces se introduce con «que».
+  isClause(x) {
+    return /(?<!\p{L})(?:no|se|es|son|est[aá]n?|estaba|tienen?|cuentan?|fueron?|hay|hab[ií]a|realizan?|presentan?|desconocen?|mantienen?|cumplen?|utilizan?|usan?|aplican?|registran?|diligencian?|evidencian?|permiten?|carecen?|contin[uú]an?|atienden?|conocen?|disponen?|brindan?|ofrecen?|demuestran?|lideran?|gestionan?|promueven?|participan?|garantizan?|ejecutan?|desarrollan?|implementan?|reportan?|entregan?|socializan?|documentan?|archivan?|diligencia|firman?)(?!\p{L})/iu.test(x) || /(?<!\p{L})\p{L}{3,}(?:ó|aron|ieron)(?!\p{L})/iu.test(x);
+  }
+
+  sentenceCase(x) {
+    const s = String(x || '').replace(/[.\s]+$/, '').trim();
+    if (!s) return '';
+    const up = s.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g, '');
+    const letters = up.length || 1;
+    const caps = up.replace(/[^A-ZÁÉÍÓÚÑ]/g, '').length;
+    const base = caps / letters > 0.6 ? s.toLowerCase().replace(/\b(sst|iso|ntc)\b/g, (m) => m.toUpperCase()) : s;
+    return base.charAt(0).toUpperCase() + base.slice(1);
+  }
+
+  // Quita muletillas iniciales del auditor («Se evidencia que…», «Fortaleza:», etc.).
+  cleanLead(x) {
+    return x.replace(/^(?:(?:hallazgo|fortaleza|observaci[oó]n|oportunidad de mejora|no conformidad)\s*[:.\-–]\s*)/i, '')
+      .replace(/^(?:se\s+(?:evidencia|evidenci[oó]|observa|observ[oó]|identifica|identific[oó]|encontr[oó]|encuentra|constat[oó]|constata|verific[oó]|verifica|destaca|destac[oó]|recomienda|sugiere)\s+(?:que\s+)?(?:como\s+fortaleza\s+)?)/i, '')
+      .replace(/^(?:el auditor\s+(?:observ[oó]|evidenci[oó]|identific[oó])\s+(?:que\s+)?)/i, '')
+      .trim();
+  }
+
+  join(x) {
+    return (this.isClause(x) ? ' que ' : ' ') + this.lc(x);
+  }
+
   compose(a, sel, cls) {
-    const body = this.composeBody(a, sel, cls);
-    return /^\[Sin texto/.test(body) ? body : this.joinIntro(body, cls);
-  }
-
-  // Une la introducción fija con el hallazgo en una sola oración: «…, el auditor observó [que] …».
-  joinIntro(body, cls) {
-    let b = body.trim();
-    const lead = /^(?:se\s+(?:evidencia|evidenció|observa|observó|identifica|identificó|encontró|encuentra|constató|constata|verificó|verifica)\s+(?:que\s+)?)/i;
-    const m = lead.exec(b);
-    if (m) {
-      const hadQue = /que\s+$/i.test(m[0]);
-      b = b.slice(m[0].length);
-      return INTRO + (hadQue ? ' que ' : ' ') + this.lc(b);
-    }
-    const head = b.split(/,\s*porque\s/i)[0];
-    const noun = /^(?:el|la|los|las|un|una|unos|unas)\s/i.test(b) && !/\s(?:es|está|esta|son|están|estan|tiene|tienen|cuenta|cuentan|realiza|realizan|mantiene|mantienen|presenta|presentan)\s/i.test(head);
-    return INTRO + (cls === 'FO' && noun ? ' ' : ' que ') + this.lc(b);
-  }
-
-  composeBody(a, sel, cls) {
-    const ev = this.tidy(a.brief).replace(/[.\s]+$/, '');
+    let ev = this.tidy(a.brief).replace(/[.\s]+$/, '');
     if (!ev) return '[Sin texto de evidencia]';
-    const strip = (x, re) => { const y = x.replace(re, '').trim(); return y ? y.charAt(0).toUpperCase() + y.slice(1) : x; };
+    ev = this.cleanLead(ev) || ev;
+    const I = INTRO;
     if (cls === 'NC') {
       // Evidencia + incumplimiento + requisito incumplido
-      const req = sel ? this.normShort(sel.docName) + ' (' + sel.numeral + ')' : '[Norma y numeral del requisito incumplido: por validar]';
-      return ev + '. ' + req + '.';
+      let req;
+      if (sel) {
+        const tit = sel.title ? ' (' + this.sentenceCase(sel.title) + ')' : '';
+        req = 'incumpliendo lo establecido en el numeral ' + sel.numeral + tit + ' de la ' + this.normShort(sel.docName);
+      } else req = 'situación que evidencia el incumplimiento de las disposiciones documentadas aplicables al proceso';
+      return I + this.join(ev) + ', ' + req + '.';
     }
     if (cls === 'FO') {
-      // Aspecto relevante o fortaleza + beneficio obtenido en el sistema o la estrategia (presente)
+      // Aspecto relevante o fortaleza + beneficio obtenido (en presente)
       const sp = this.splitAt(ev, [
         { re: 'porque', keep: false }, { re: 'ya que', keep: false }, { re: 'puesto que', keep: false }, { re: 'debido a que', keep: false },
         { re: 'lo cual|lo que', keep: false },
         { re: 'permite\\w*|contribuye\\w*|favorece\\w*|garantiza\\w*|facilita\\w*|asegura\\w*|fortalece\\w*|mejora(?:ndo)?|permitiendo|contribuyendo|favoreciendo|garantizando|facilitando|asegurando|fortaleciendo|generando|promoviendo', keep: true }
       ]);
       const GER = { permitiendo: 'permite', contribuyendo: 'contribuye', favoreciendo: 'favorece', garantizando: 'garantiza', facilitando: 'facilita', asegurando: 'asegura', fortaleciendo: 'fortalece', generando: 'genera', promoviendo: 'promueve', mejorando: 'mejora' };
-      if (sp.rest) sp.rest = sp.rest.replace(/^(\S+)/, (w) => GER[w.toLowerCase()] || w);
-      const aspect = strip(sp.aspect, /^(?:fortaleza\s*[:.-]\s*|se destaca\w*\s+(?:como fortaleza\s+)?|se evidencia como fortaleza\s+)/i);
-      return aspect + ', porque ' + (sp.rest ? this.lc(sp.rest) : '[beneficio que obtiene el sistema o la estrategia, en presente]') + '.';
+      let ben = sp.rest ? sp.rest.replace(/^(\S+)/, (w) => GER[w.toLowerCase()] || w) : '';
+      ben = ben ? this.lc(ben) : 'contribuye al cumplimiento de los objetivos del proceso y al fortalecimiento del Sistema Integrado de Gestión';
+      const asp = sp.aspect.replace(/\s+(?:es|son)\s+(?:excelente|destacable|sobresaliente|adecuad[oa]s?)$/i, (m) => m);
+      if (this.isClause(asp)) return I + ' que ' + this.lc(asp) + ', lo cual constituye una fortaleza del proceso, porque ' + ben + '.';
+      return I + ' ' + this.lc(asp) + ' como una fortaleza del proceso, porque ' + ben + '.';
     }
     if (cls === 'OM') {
       // Susceptible de mejorar + para lo cual + beneficio en futuro
@@ -1458,19 +1473,32 @@ class Component extends DCLogic {
         { re: 'para lo cual', keep: false }, { re: 'lo cual|lo que', keep: false }, { re: 'con el fin de|a fin de|para que', keep: false },
         { re: 'permitir(?:á|ía|a|ia)n?|contribuir(?:á|ía|a|ia)n?|facilitar(?:á|ía|a|ia)n?|mejorar(?:á|ía|a|ia)n?|garantizar(?:á|ía|a|ia)n?', keep: true }
       ]);
-      const aspect = strip(sp.aspect.replace(/\s+(?:podr(?:í|i)a|puede|debe|deber(?:í|i)a)\s+(?:mejorar\w*|fortalecer\w*|optimizar\w*)$/i, '').replace(/\s+(?:es\s+)?susceptible de mejora\w*$/i, ''), /^(?:oportunidad de mejora\s*[:.-]\s*|(?:es\s+)?susceptible de mejora(?:r)?\s*(?:en\s+)?|se recomienda\s+(?:mejorar\s+)?|se sugiere\s+(?:mejorar\s+)?|mejorar\s+|fortalecer\s+|optimizar\s+)/i);
-      return 'Es susceptible de mejorar ' + this.lc(aspect) + ', para lo cual ' + (sp.rest ? this.lc(sp.rest) : '[beneficio esperado en futuro: «permitirá…»]') + '.';
+      let asp = sp.aspect.replace(/\s+(?:podr(?:í|i)an?|pueden?|deben?|deber(?:í|i)an?)\s+(?:mejorar\w*|fortalecer\w*|optimizar\w*)$/i, '').replace(/\s+(?:es\s+)?susceptible de mejora\w*$/i, '');
+      asp = asp.replace(/^(?:oportunidad de mejora\s*[:.\-]\s*|(?:es\s+)?susceptible de mejora(?:r)?\s*(?:en\s+)?|mejorar\s+|fortalecer\s+|optimizar\s+)/i, '').trim() || asp;
+      let ben = sp.rest ? this.lc(sp.rest) : '';
+      if (ben) {
+        ben = ben.replace(/^(\S+?r)(?:ía|ia)(n?)(?=[\s,.;:]|$)/i, '$1á$2');
+        if (/^\S+r(?:á|a)n?(?=[\s,.;:]|$)/i.test(ben)) ben = 'su fortalecimiento ' + ben;
+        else if (/^\S+(?:ar|er|ir)\b/i.test(ben)) ben = 'su fortalecimiento permitirá ' + ben;
+        else ben = 'su fortalecimiento permitirá ' + ben;
+      } else ben = 'su fortalecimiento permitirá optimizar el desempeño del proceso y mejorar la experiencia de los usuarios';
+      if (this.isClause(asp)) return I + ' que ' + this.lc(asp) + ', aspecto que es susceptible de mejorar, para lo cual ' + ben + '.';
+      const plural = /^(?:los|las|unos|unas)\s/i.test(asp);
+      return I + ' que ' + this.lc(asp) + (plural ? ' son susceptibles' : ' es susceptible') + ' de mejorar, para lo cual ' + ben + '.';
     }
     if (cls === 'OB') {
-      // Aspecto a mejorar o debilidad + impacto que se generaría en el proceso, sistema o estrategia
+      // Aspecto a mejorar o debilidad + impacto que se generaría
       const sp = this.splitAt(ev, [
         { re: 'lo cual|lo que', keep: false },
         { re: 'podr(?:í|i)a\\w*|afectar(?:ía|ia|á|a)?\\w*|impactar(?:ía|ia|á|a)?\\w*|generar(?:ía|ia|á|a)?\\w*|ocasionar(?:ía|ia|á|a)?\\w*|poniendo en riesgo|con riesgo de', keep: true }
       ]);
-      const aspect = strip(sp.aspect, /^(?:observaci(?:ó|o)n\s*[:.-]\s*|debilidad\s*[:.-]\s*)/i);
-      return aspect + ', que ' + (sp.rest ? this.lc(sp.rest) : 'podría impactar en [impacto que se generaría en el proceso, sistema o estrategia]') + '.';
+      const asp = sp.aspect.replace(/^(?:observaci(?:ó|o)n\s*[:.\-–]\s*|debilidad\s*[:.\-–]\s*)/i, '');
+      let imp = sp.rest ? this.lc(sp.rest) : '';
+      if (imp && !/^podr/i.test(imp)) imp = /^\S+(?:ar|er|ir)\b/i.test(imp) ? 'podría ' + imp : imp;
+      if (!imp) imp = 'podría afectar el desempeño del proceso y el logro de los objetivos institucionales si no se atiende oportunamente';
+      return I + this.join(asp) + ', situación que ' + imp + '.';
     }
-    return ev + '. [Clasificación pendiente: el auditor debe definirla para aplicar la estructura de redacción.]';
+    return I + this.join(ev) + '.';
   }
 
   current() {
@@ -1677,7 +1705,7 @@ class Component extends DCLogic {
 
   reportBullet(f) {
     let h = this.findingBody(f).replace(/\s+/g, ' ').trim();
-    if (f.cls === 'NC' && f.norma && f.numeral) {
+    if (f.cls === 'NC' && f.norma && f.numeral && h.indexOf('numeral ' + f.numeral) < 0) {
       const ns = this.normShort(f.norma);
       const tail = ns + ' (' + f.numeral + ').';
       if (h.endsWith(tail)) h = h.slice(0, -tail.length).trim();
