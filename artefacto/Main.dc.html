@@ -658,6 +658,21 @@ const LS_KEY = 'hila_v3_auditoria';
 const BASE_URL = '/_blob/889af1251e9b47e3f4c978339788035b';
 const BASE_DUP_RE = /9001|14001|45001|pr ?13/;
 const INTRO = 'Durante la auditoría interna realizada en el proceso de Atención al Usuario del Hospital Infantil Los Ángeles de Pasto, el auditor observó la interacción comunicativa entre los usuarios y el personal del servicio de atención al cliente, sin que se registraran en la redacción original el período auditado, el tamaño de la muestra revisada, el método de recolección de evidencia ni los criterios objetivos empleados para la valoración.';
+// Sinónimos frecuentes en el hospital → vocabulario de las normas (solo amplían la búsqueda del requisito).
+const SYN = {
+  paciente: 'cliente usuario', pacientes: 'cliente usuario', usuario: 'cliente', usuarios: 'cliente', familia: 'cliente partes interesadas',
+  atencion: 'servicio prestacion', trato: 'satisfaccion cliente', amable: 'satisfaccion cliente', queja: 'retroalimentacion satisfaccion cliente', quejas: 'retroalimentacion satisfaccion cliente', reclamo: 'retroalimentacion satisfaccion cliente', pqrs: 'retroalimentacion satisfaccion cliente',
+  capacitacion: 'competencia formacion toma conciencia', capacitaciones: 'competencia formacion toma conciencia', induccion: 'competencia toma conciencia', entrenamiento: 'competencia formacion',
+  registro: 'informacion documentada conservar', registros: 'informacion documentada conservar', formato: 'informacion documentada', formatos: 'informacion documentada', acta: 'informacion documentada', actas: 'informacion documentada', archivo: 'informacion documentada control', documento: 'informacion documentada', documentos: 'informacion documentada',
+  equipo: 'recursos seguimiento medicion', equipos: 'recursos seguimiento medicion', calibracion: 'medicion trazabilidad', mantenimiento: 'infraestructura', instalaciones: 'infraestructura', limpieza: 'ambiente operacion procesos', aseo: 'ambiente operacion procesos',
+  residuos: 'ambiental aspectos ambientales', reciclaje: 'ambiental aspectos ambientales', agua: 'ambiental', energia: 'ambiental',
+  trabajador: 'trabajadores personas', trabajadores: 'trabajadores personas', personal: 'personas trabajadores', colaboradores: 'personas trabajadores', funcionarios: 'personas trabajadores',
+  accidente: 'incidentes', accidentes: 'incidentes', emergencia: 'emergencias preparacion respuesta', evacuacion: 'emergencias preparacion respuesta', epp: 'peligros controles', riesgo: 'riesgos oportunidades', riesgos: 'riesgos oportunidades',
+  indicador: 'seguimiento medicion analisis evaluacion', indicadores: 'seguimiento medicion analisis evaluacion', meta: 'objetivos', metas: 'objetivos',
+  proveedor: 'proveedores externos', proveedores: 'proveedores externos', compras: 'proveedores externos suministrados', contrato: 'proveedores externos',
+  gerencia: 'alta direccion liderazgo', directivos: 'alta direccion liderazgo', comite: 'revision direccion', politica: 'politica', socializacion: 'comunicacion toma conciencia', divulgacion: 'comunicacion',
+  auditoria: 'auditoria interna', plan: 'planificacion', mejoramiento: 'mejora continua accion correctiva', correctiva: 'no conformidad accion correctiva'
+};
 const ROLES = {
   req: { label: 'Requisito (etapa 2)', short: 'Requisito' },
   risk: { label: 'Riesgo (etapa 5)', short: 'Riesgo' },
@@ -1149,7 +1164,9 @@ class Component extends DCLogic {
     } else if (c.FO > 0) cls = 'FO';
     else if (c.OM > 0) cls = 'OM';
     else if (c.OB > 0) cls = 'OB';
-    return { cls, note, counts: c };
+    let isDefault = false;
+    if (!cls) { cls = 'OB'; isDefault = true; }
+    return { cls, note, counts: c, isDefault };
   }
 
   rank(textUsed, roles) {
@@ -1172,7 +1189,10 @@ class Component extends DCLogic {
     const avg = tot / N || 1;
     const idf = (w) => Math.log(1 + (N - (df.get(w) || 0) + 0.5) / ((df.get(w) || 0) + 0.5));
     const qmap = new Map();
-    const q = Array.from(new Set(this.toks(textUsed, qmap)));
+    const base = this.toks(textUsed, qmap);
+    const extra = [];
+    for (const w of this.norm(textUsed).split(/[^a-z0-9]+/)) if (SYN[w]) extra.push(SYN[w]);
+    const q = Array.from(new Set(base.concat(extra.length ? this.toks(extra.join(' '), qmap) : [])));
     const res = [];
     units.forEach((u, i) => {
       const { tf, len } = tfs[i];
@@ -1186,7 +1206,7 @@ class Component extends DCLogic {
           sc += g * (f * 2.2) / (f + 1.2 * (0.6 + 0.4 * len / avg));
         }
       }
-      if (sh.length >= 2) {
+      if (sh.length >= 1) {
         sh.sort((a, b) => b.g - a.g);
         res.push(Object.assign({}, u, { score: sc, shared: sh.map((x) => qmap.get(x.w) || x.w), nShared: sh.length, sharedStems: sh.map((x) => x.w) }));
       }
@@ -1371,12 +1391,9 @@ class Component extends DCLogic {
     if (!a.empty) {
       if (!a.hadLib) A('crit', 'No hay documentos normativos cargados. Sin una fuente normativa no es posible identificar norma, numeral ni requisito. Requiere validación del auditor.');
       else if (!a.hadCrit) A('crit', 'Ningún documento está asignado a la etapa 2 (Requisito). Asigne al menos una norma como fuente de requisitos.');
-      else if (!cands.length) A('warn', 'No se encontró en los documentos cargados un requisito con coincidencia suficiente (mínimo 2 términos). Norma, numeral y requisito requieren validación del auditor.');
-      if (sel && sel.conf === 'Baja') A('warn', 'Coincidencia léxica baja con el requisito propuesto (' + sel.nShared + ' términos). Requiere validación del auditor.');
+      if (sel && sel.conf === 'Baja') A('info', 'Coincidencia léxica baja con el requisito propuesto (' + sel.nShared + ' términos). Requiere validación del auditor.');
       if (sel && sel.numeral === 's/n') A('warn', 'El numeral no pudo identificarse en el documento cargado (numeral s/n). Requiere validación del auditor.');
-      if (cands.length > 1 && s.selReq === null && cands[1].score >= 0.85 * cands[0].score && cands[1].numeral !== cands[0].numeral) A('warn', 'Hay varios requisitos con puntajes similares (' + cands[0].numeral + ' y ' + cands[1].numeral + '). Elija el que corresponda.');
-      if (!cls) A('warn', 'No se detectaron expresiones que permitan clasificar el hallazgo. El auditor debe seleccionar la clasificación.');
-      if (/\[[^\]]+\]/.test(corrected)) A('warn', 'La redacción del hallazgo tiene partes entre corchetes que el texto del auditor no aporta. Complételas en la etapa 4: la aplicación no las inventa.');
+      if (cands.length > 1 && s.selReq === null && cands[1].score >= 0.85 * cands[0].score && cands[1].numeral !== cands[0].numeral) A('info', 'Hay varios requisitos con puntajes similares (' + cands[0].numeral + ' y ' + cands[1].numeral + '). Elija el que corresponda.');
       if (sug.note && !s.clsManual) A('warn', sug.note);
       if (cls === 'NC' && !sel) A('crit', 'Una no conformidad requiere requisito identificado. Seleccione el requisito o cambie la clasificación.');
       for (const e of s.evidences) {
@@ -2031,7 +2048,7 @@ class Component extends DCLogic {
       v.clsSolid = C ? C.solid : '#7A8791';
       v.clsIsAuto = !!(!s.clsManual && cur.sug.cls);
       v.clsIsManual = !!s.clsManual;
-      v.clsSourceNote = s.clsManual ? 'Clasificación definida por el auditor.' : cur.sug.cls ? 'Clasificación sugerida a partir de expresiones del texto del auditor. Confirme o cambie.' : 'No hay elementos suficientes para sugerir una clasificación.';
+      v.clsSourceNote = s.clsManual ? 'Clasificación definida por el auditor.' : cur.sug.isDefault ? 'El texto no trae expresiones de clasificación: se propone Observación por defecto. Cámbiela si corresponde.' : cur.sug.cls ? 'Clasificación sugerida a partir de expresiones del texto del auditor. Confirme o cambie.' : 'No hay elementos suficientes para sugerir una clasificación.';
       const reasons = [];
       ORDER.forEach((k) => a.cues[k].slice(0, 3).forEach((x) => reasons.push({ tag: CLS[k].short, tagBg: CLS[k].bg, tagFg: CLS[k].fg, text: x.quote })));
       v.clsReasons = reasons.slice(0, 8);
