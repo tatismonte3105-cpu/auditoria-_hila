@@ -539,7 +539,12 @@ textarea.field{resize:vertical;min-height:110px}
 <div style="display:flex;flex-direction:column;gap:8px;">
 <sc-for list="{{concFactual}}" as="t" hint-placeholder-count="4"><div>{{t.text}}</div></sc-for>
 </div>
-<label class="lbl" for="conc-final">Conclusión del auditor (opcional)</label>
+<div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid #E4E0D3;padding-top:16px;">
+<div class="lbl">Conclusión final de la auditoría (así aparece al final del informe)</div>
+<div class="quote" style="text-align:justify;">{{finalConc}}</div>
+<sc-if value="{{finalConcIsAuto}}" hint-placeholder-val="{{true}}"><div class="small muted">Redactada automáticamente con los datos de la matriz: adecuación (no conformidades), conveniencia (fortalezas) y eficiencia (observaciones y oportunidades de mejora). Si en la conclusión integrada ISO 19011 marca un juicio, se usa ese juicio. Para reemplazarla, escriba su propia conclusión abajo.</div></sc-if>
+</div>
+<label class="lbl" for="conc-final">Conclusión del auditor (opcional: si la escribe, reemplaza la conclusión automática en el informe)</label>
 <textarea id="conc-final" class="field" style="min-height:110px;" placeholder="Escriba aquí la conclusión profesional de la auditoría" value="{{concFinalVal}}" onChange="{{onConcFinal}}"></textarea>
 </section>
 
@@ -575,10 +580,14 @@ textarea.field{resize:vertical;min-height:110px}
 <div style="flex:1 1 300px;"><label class="small" for="m-aud2">Auditor</label><input id="m-aud2" type="text" class="field" value="{{metaAuditor}}" onChange="{{onMetaAuditor}}"></div>
 <div style="flex:1 1 300px;"><label class="small" for="m-fecha">Fecha de la auditoría</label><input id="m-fecha" type="text" class="field" placeholder="Ej.: 21/09/2026" value="{{metaFecha}}" onChange="{{onMetaFecha}}"></div>
 </div>
-<div><label class="small" for="m-alc">Alcance</label><textarea id="m-alc" class="field" style="min-height:80px;" value="{{metaAlcance}}" onChange="{{onMetaAlcance}}"></textarea></div>
+<div><label class="small" for="m-obj">Objetivo</label><textarea id="m-obj" class="field" style="min-height:80px;" value="{{metaObjetivo}}" onChange="{{onMetaObjetivo}}"></textarea></div>
+<div><label class="small" for="m-alc">Alcance</label><textarea id="m-alc" class="field" style="min-height:80px;" placeholder="Ej.: La auditoría abarcó los procesos de Compras, Calidad, Urgencias…" value="{{metaAlcance}}" onChange="{{onMetaAlcance}}"></textarea></div>
+<div><label class="small" for="m-rec">Recomendaciones (una por línea)</label><textarea id="m-rec" class="field" style="min-height:110px;" placeholder="Si lo deja vacío, se usan los controles recomendados por el auditor en la etapa 6 de cada hallazgo" value="{{recomText}}" onChange="{{onRecomText}}"></textarea></div>
+<div class="small muted">Criterios de auditoría, fortalezas, oportunidades de mejora, observaciones y no conformidades se toman de la matriz consolidada. La conclusión final se redacta en la pestaña Conclusión.</div>
 <div style="display:flex;flex-wrap:wrap;gap:12px;">
 <button type="button" class="btn btn-big" onClick="{{onGenReport}}">GENERAR INFORME</button>
 <button type="button" class="btn btn-ghost btn-big" onClick="{{onPdf}}">DESCARGAR INFORME PDF</button>
+<button type="button" class="btn btn-ghost btn-big" onClick="{{onDocx}}">DESCARGAR INFORME WORD</button>
 <button type="button" class="btn btn-ghost btn-big" onClick="{{onCsv}}">DESCARGAR MATRIZ</button>
 </div>
 <sc-if value="{{hasDlMsg}}" hint-placeholder-val="{{false}}"><div class="al al-info" role="status">{{dlMsg}}</div></sc-if>
@@ -588,9 +597,10 @@ textarea.field{resize:vertical;min-height:110px}
 <div>
 <sc-if value="{{b.isTitle}}" hint-placeholder-val="{{false}}"><h1 class="serif" style="font-size:32px;line-height:1.15;margin:0 0 6px;color:#0B5A66;">{{b.text}}</h1></sc-if>
 <sc-if value="{{b.isSub}}" hint-placeholder-val="{{false}}"><div class="muted">{{b.text}}</div></sc-if>
-<sc-if value="{{b.isH2}}" hint-placeholder-val="{{false}}"><h2 class="serif" style="font-size:22px;margin:28px 0 8px;padding-bottom:6px;border-bottom:1px solid #0B5A66;color:#0B5A66;">{{b.text}}</h2></sc-if>
+<sc-if value="{{b.isH2}}" hint-placeholder-val="{{false}}"><h2 style="font-size:15px;font-weight:700;letter-spacing:.02em;margin:22px 0 6px;color:#1F4E8C;">{{b.text}}</h2></sc-if>
+<sc-if value="{{b.isLi}}" hint-placeholder-val="{{false}}"><div style="display:flex;gap:10px;margin:0 0 6px;padding-left:4px;"><span aria-hidden="true">•</span><span style="flex:1 1 0;min-width:0;text-align:justify;">{{b.text}}</span></div></sc-if>
 <sc-if value="{{b.isH3}}" hint-placeholder-val="{{false}}"><h3 style="font-size:15px;margin:16px 0 6px;">{{b.text}}</h3></sc-if>
-<sc-if value="{{b.isP}}" hint-placeholder-val="{{false}}"><p style="margin:0 0 8px;">{{b.text}}</p></sc-if>
+<sc-if value="{{b.isP}}" hint-placeholder-val="{{false}}"><p style="margin:0 0 8px;text-align:justify;">{{b.text}}</p></sc-if>
 <sc-if value="{{b.isKV}}" hint-placeholder-val="{{false}}"><div style="display:flex;gap:14px;margin:0 0 4px;font-size:14px;"><div style="flex:0 0 120px;font-weight:700;color:#566673;">{{b.k}}</div><div style="flex:1 1 0;min-width:0;white-space:pre-wrap;word-break:break-word;">{{b.v}}</div></div></sc-if>
 <sc-if value="{{b.isAlert}}" hint-placeholder-val="{{false}}"><div class="al al-warn">{{b.text}}</div></sc-if>
 <sc-if value="{{b.isRule}}" hint-placeholder-val="{{false}}"><div style="height:1px;background:#D9D5C9;margin:10px 0;"></div></sc-if>
@@ -653,14 +663,15 @@ const ROLES = {
   risk: { label: 'Riesgo (etapa 5)', short: 'Riesgo' },
   method: { label: 'Solo consulta', short: 'Consulta' }
 };
-const PKEYS = ['lib', 'findings', 'metaAud', 'metaProc', 'metaAuditor', 'metaFecha', 'metaAlcance', 'scale', 'conc', 'concFinal', 'nextId'];
+const PKEYS = ['lib', 'findings', 'metaAud', 'metaProc', 'metaAuditor', 'metaFecha', 'metaAlcance', 'metaObjetivo', 'recomText', 'scale', 'conc', 'concFinal', 'nextId'];
+const DEF_OBJ = 'Evaluar la conformidad y desempeño del Sistema Integrado de Gestión del Hospital Infantil Los Ángeles frente a los requisitos de las normas NTC-ISO 9001:2015, NTC-ISO 14001:2015 e ISO 45001:2018, con base en la evidencia objetiva recopilada durante la auditoría interna.';
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this._st = {
       view: 'hallazgo', base: null, baseState: 'loading', evTab: 'texto', text: '', evidences: [], lib: [], pasteName: '', pasteText: '', libMsg: '',
-      metaAud: '', metaProc: '', metaAuditor: '', metaFecha: '', metaAlcance: '',
+      metaAud: '', metaProc: '', metaAuditor: '', metaFecha: '', metaAlcance: '', metaObjetivo: '', recomText: '',
       analysis: null, selReq: null, clsManual: null, corrected: '', corrDirty: false,
       prob: 0, imp: 0, riskText: '', ctrlText: '', ctrlChosen: {}, riskChosen: {},
       findings: [], nextId: 1, editingId: null,
@@ -689,7 +700,7 @@ class Component extends DCLogic {
         patch.lib = this._st.lib.filter((x) => x.base).concat(this.dropBaseDups(patch.lib));
         this._idc = 1 + Math.max(0, ...d.lib.map((x) => parseInt(String(x.id).slice(1), 10) || 0));
       }
-      ['findings', 'metaAud', 'metaProc', 'metaAuditor', 'metaFecha', 'metaAlcance', 'scale', 'conc', 'concFinal', 'nextId'].forEach((k) => { if (d[k] !== undefined) patch[k] = d[k]; });
+      ['findings', 'metaAud', 'metaProc', 'metaAuditor', 'metaFecha', 'metaAlcance', 'metaObjetivo', 'recomText', 'scale', 'conc', 'concFinal', 'nextId'].forEach((k) => { if (d[k] !== undefined) patch[k] = d[k]; });
       this.upd(patch, true);
     } catch (e) {
       this.upd({ persistOk: false }, true);
@@ -714,7 +725,7 @@ class Component extends DCLogic {
         v: 1,
         lib: s.lib.filter((d) => !d.base).map((d) => ({ id: d.id, name: d.name, text: d.text, role: d.role })),
         findings: s.findings, metaAud: s.metaAud, metaProc: s.metaProc, metaAuditor: s.metaAuditor, metaFecha: s.metaFecha, metaAlcance: s.metaAlcance,
-        scale: s.scale, conc: s.conc, concFinal: s.concFinal, nextId: s.nextId
+        metaObjetivo: s.metaObjetivo, recomText: s.recomText, scale: s.scale, conc: s.conc, concFinal: s.concFinal, nextId: s.nextId
       };
       window.localStorage.setItem(LS_KEY, JSON.stringify(payload));
       if (s.persistOk !== true) this.upd({ persistOk: true }, true);
@@ -1277,7 +1288,7 @@ class Component extends DCLogic {
       if (m && (!best || m.index < best.idx)) best = { idx: m.index + m[1].length, len: m[2].length, keep: c.keep };
     }
     if (!best) return { aspect: text, rest: '' };
-    const aspect = text.slice(0, best.idx).replace(/[\s,;:.\-–]+$/, '').replace(/\s+(?:que|y|lo)$/i, '').trim();
+    const aspect = text.slice(0, best.idx).replace(/[\s,;:.\-–]+$/, '').replace(/\s+(?:que|y|lo)$/i, '').replace(/[\s,;:.\-–]+$/, '').trim();
     const rest = text.slice(best.keep ? best.idx : best.idx + best.len).replace(/^[\s,;:]+/, '').replace(/[\s.]+$/, '').trim();
     if (!aspect) return { aspect: text, rest: '' };
     return { aspect, rest };
@@ -1311,8 +1322,10 @@ class Component extends DCLogic {
       const sp = this.splitAt(ev, [
         { re: 'porque', keep: false }, { re: 'ya que', keep: false }, { re: 'puesto que', keep: false }, { re: 'debido a que', keep: false },
         { re: 'lo cual|lo que', keep: false },
-        { re: 'permite\\w*|contribuye\\w*|favorece\\w*|garantiza\\w*|facilita\\w*|asegura\\w*|fortalece\\w*|mejora(?:ndo)?', keep: true }
+        { re: 'permite\\w*|contribuye\\w*|favorece\\w*|garantiza\\w*|facilita\\w*|asegura\\w*|fortalece\\w*|mejora(?:ndo)?|permitiendo|contribuyendo|favoreciendo|garantizando|facilitando|asegurando|fortaleciendo|generando|promoviendo', keep: true }
       ]);
+      const GER = { permitiendo: 'permite', contribuyendo: 'contribuye', favoreciendo: 'favorece', garantizando: 'garantiza', facilitando: 'facilita', asegurando: 'asegura', fortaleciendo: 'fortalece', generando: 'genera', promoviendo: 'promueve', mejorando: 'mejora' };
+      if (sp.rest) sp.rest = sp.rest.replace(/^(\S+)/, (w) => GER[w.toLowerCase()] || w);
       const aspect = strip(sp.aspect, /^(?:fortaleza\s*[:.-]\s*|se destaca\w*\s+(?:como fortaleza\s+)?|se evidencia como fortaleza\s+)/i);
       return aspect + ', porque ' + (sp.rest ? this.lc(sp.rest) : '[beneficio que obtiene el sistema o la estrategia, en presente]') + '.';
     }
@@ -1508,66 +1521,196 @@ class Component extends DCLogic {
     ];
   }
 
+  /* ---------- informe ---------- */
+  // Texto del hallazgo sin la introducción fija de la redacción corregida.
+  findingBody(f) {
+    let h = String(f.hallazgo || '').trim();
+    if (h.indexOf(INTRO) === 0) h = h.slice(INTRO.length).trim();
+    return h;
+  }
+
+  reportBullet(f) {
+    let h = this.findingBody(f).replace(/\s+/g, ' ').trim();
+    if (f.cls === 'NC' && f.norma && f.numeral) {
+      const ns = this.normShort(f.norma);
+      const tail = ns + ' (' + f.numeral + ').';
+      if (h.endsWith(tail)) h = h.slice(0, -tail.length).trim();
+      h = h.replace(/[.\s]+$/, '') + ', incumpliendo el numeral ' + f.numeral + ' de la ' + ns + '.';
+    }
+    if (h && !/[.!?…]$/.test(h)) h += '.';
+    return h;
+  }
+
+  natSort(a, b) {
+    const x = a.split('.').map(Number), y = b.split('.').map(Number);
+    for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; }
+    return 0;
+  }
+
+  criteriaText() {
+    const by = new Map();
+    this._st.findings.forEach((f) => {
+      if (!f.norma) return;
+      const k = this.normShort(f.norma);
+      if (!by.has(k)) by.set(k, new Set());
+      if (f.numeral && f.numeral !== 's/n') by.get(k).add(f.numeral);
+    });
+    const tail = 'y los documentos internos del Sistema Integrado de Gestión aplicables a los procesos auditados.';
+    if (!by.size) return 'NTC-ISO 9001:2015, NTC-ISO 14001:2015 e ISO 45001:2018, ' + tail;
+    const parts = Array.from(by.entries()).map(([k, set]) => {
+      const nums = Array.from(set).sort((a, b) => this.natSort(a, b));
+      return nums.length ? k + ' (' + (nums.length > 1 ? 'numerales ' : 'numeral ') + nums.join(', ') + ')' : k;
+    });
+    return parts.join('; ') + ', ' + tail;
+  }
+
+  recommendations() {
+    const own = String(this._st.recomText || '').split('\n').map((x) => x.replace(/^[\s•\-–*]+/, '').trim()).filter(Boolean);
+    if (own.length) return own;
+    const out = [];
+    this._st.findings.filter((f) => f.cls !== 'FO').forEach((f) => {
+      String(f.controles || '').split(' | ').forEach((c) => {
+        const m = /^(.*)\s\[auditor\]$/.exec(c.trim());
+        if (m && m[1].trim() && out.indexOf(m[1].trim()) < 0) out.push(m[1].trim());
+      });
+    });
+    return out;
+  }
+
+  // Conclusión final breve con adecuación, conveniencia y eficiencia en un solo párrafo.
+  finalConclusion() {
+    const s = this._st;
+    if ((s.concFinal || '').trim()) return s.concFinal.trim();
+    const st = this.stats();
+    if (!st.n) return 'No es posible emitir la conclusión final: no hay hallazgos registrados en la matriz consolidada.';
+    const c = st.counts;
+    const W = ['cero', 'una', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez'];
+    const pl = (n, a, b) => (n <= 10 ? W[n] : String(n)) + ' ' + (n === 1 ? a : b);
+    const vb = (n, a, b) => (n === 1 ? a : b);
+    const J = { 'Favorable': 'favorable', 'Favorable con reservas': 'favorable con reservas', 'Desfavorable': 'desfavorable' };
+    const NORMAS = 'frente a los requisitos de las normas NTC-ISO 9001:2015, NTC-ISO 14001:2015 e ISO 45001:2018';
+    const ncNums = s.findings.filter((f) => f.cls === 'NC' && f.numeral).map((f) => 'numeral ' + f.numeral + ' de la ' + this.normShort(f.norma));
+    let ade;
+    if (s.conc.adeJ) ade = 'presenta una adecuación ' + J[s.conc.adeJ] + ' ' + NORMAS;
+    else if (c.NC) ade = 'es adecuado de manera parcial ' + NORMAS + ', toda vez que se ' + vb(c.NC, 'identificó ', 'identificaron ') + pl(c.NC, 'no conformidad', 'no conformidades') + (ncNums.length ? ' (' + ncNums.join('; ') + ')' : '');
+    else ade = 'es adecuado ' + NORMAS + ', al no evidenciarse incumplimientos de los requisitos evaluados';
+    let conv;
+    if (s.conc.convJ) conv = 'su conveniencia se valora como ' + J[s.conc.convJ];
+    else if (c.FO) conv = 'resulta conveniente para la institución, como lo ' + vb(c.FO, 'demuestra ', 'demuestran ') + pl(c.FO, 'fortaleza identificada', 'fortalezas identificadas');
+    else conv = 'su conveniencia requiere fortalecerse, al no identificarse fortalezas en los procesos auditados';
+    const pend = c.OB + c.OM;
+    let efi;
+    if (s.conc.efiJ) efi = 'su eficiencia se valora como ' + J[s.conc.efiJ];
+    else if (pend) efi = 'su eficiencia puede mejorarse, considerando ' + [c.OB ? pl(c.OB, 'observación', 'observaciones') : '', c.OM ? pl(c.OM, 'oportunidad de mejora', 'oportunidades de mejora') : ''].filter(Boolean).join(' y ') + ' que ' + vb(pend, 'requiere', 'requieren') + ' atención';
+    else if (c.NC) efi = 'su eficiencia depende del cierre oportuno de las acciones correctivas';
+    else efi = 'es eficiente en el uso de los recursos para lograr los resultados previstos';
+    const proc = (s.metaProc || '').trim();
+    let txt = 'Con base en la evidencia objetiva recopilada durante la auditoría interna' + (proc ? ' a ' + proc : '') + ', se concluye que el Sistema Integrado de Gestión del Hospital Infantil Los Ángeles ' + ade + '; ' + conv + '; y ' + efi + '.';
+    const acts = [];
+    if (c.NC) acts.push('el cierre de ' + vb(c.NC, 'la no conformidad', 'las no conformidades') + ' mediante acciones correctivas');
+    if (pend) acts.push('la atención de ' + (c.OB && c.OM ? 'las observaciones y oportunidades de mejora' : c.OB ? vb(c.OB, 'la observación', 'las observaciones') : vb(c.OM, 'la oportunidad de mejora', 'las oportunidades de mejora')));
+    if (acts.length) txt += ' ' + acts.join(' y ').replace(/^./, (m) => m.toUpperCase()) + ' ' + vb(acts.length, 'permitirá', 'permitirán') + ' fortalecer la mejora continua del sistema.';
+    return txt;
+  }
+
   buildReport() {
     const s = this._st;
-    const st = this.stats();
     const B = [];
     const NI = '[No informado: completar por el auditor]';
     B.push({ t: 'title', text: 'Informe de auditoría interna' });
     B.push({ t: 'sub', text: 'Hospital Infantil Los Ángeles · Pasto, Nariño' });
-    B.push({ t: 'sub', text: 'Generado con Auditoría Interna HILA Versión 3 el ' + new Date().toLocaleString('es-CO') });
-    B.push({ t: 'gap', n: 8 });
-    B.push({ t: 'h2', text: '1. Datos de la auditoría' });
+    B.push({ t: 'gap', n: 6 });
     B.push({ t: 'kv', k: 'Auditoría', v: s.metaAud || NI });
     B.push({ t: 'kv', k: 'Proceso auditado', v: s.metaProc || NI });
     B.push({ t: 'kv', k: 'Auditor', v: s.metaAuditor || NI });
     B.push({ t: 'kv', k: 'Fecha', v: s.metaFecha || NI });
-    B.push({ t: 'kv', k: 'Alcance', v: s.metaAlcance || NI });
-    B.push({ t: 'h2', text: '2. Fuente normativa utilizada' });
-    if (!s.lib.length) B.push({ t: 'alert', text: 'No se cargaron documentos normativos. Ningún requisito pudo identificarse con la aplicación; toda la información normativa requiere validación del auditor.' });
-    s.lib.forEach((d) => B.push({ t: 'kv', k: (ROLES[d.role] || ROLES.method).short + (d.base ? ' · base' : ''), v: d.name + ' · ' + d.units.length + ' unidades normativas' + (d.warn ? ' · ' + d.warn : '') }));
-    B.push({ t: 'p', text: 'La aplicación solo utiliza como fundamento normativo los documentos cargados por el auditor. Toda coincidencia sugerida es lexical y debe ser validada por el auditor.' });
-    B.push({ t: 'h2', text: '3. Resultados de la auditoría' });
-    ORDER.forEach((k) => B.push({ t: 'bar', label: CLS[k].label, n: st.counts[k], max: Math.max(1, st.n), color: CLS[k].solid }));
-    B.push({ t: 'p', text: 'Total de hallazgos registrados: ' + st.n + '.' });
-    if (st.byNorm.size) {
-      B.push({ t: 'h3', text: 'Distribución por norma o documento' });
-      Array.from(st.byNorm.entries()).forEach(([k, v]) => B.push({ t: 'bar', label: k, n: v.total, max: Math.max(1, st.n), color: '#0B5A66' }));
-    }
-    B.push({ t: 'h2', text: '4. Matriz consolidada de hallazgos' });
-    if (!s.findings.length) B.push({ t: 'p', text: 'No hay hallazgos registrados.' });
-    s.findings.forEach((f) => {
-      B.push({ t: 'h3', text: f.id + ' · ' + CLS[f.cls].label + (f.validado ? ' · Validado por el auditor' : ' · Pendiente de validación') });
-      B.push({ t: 'kv', k: 'Evidencia', v: f.evidencia || '[Sin evidencia registrada]' });
-      B.push({ t: 'kv', k: 'Norma', v: f.norma || '[No identificada: requiere validación]' });
-      B.push({ t: 'kv', k: 'Numeral', v: f.numeral || '[No identificado]' });
-      B.push({ t: 'kv', k: 'Requisito', v: f.requisito || '[No identificado]' });
-      B.push({ t: 'kv', k: 'Hallazgo', v: f.hallazgo });
-      B.push({ t: 'kv', k: 'Riesgo', v: f.riesgo || '[No registrado]' });
-      B.push({ t: 'kv', k: 'Evaluación', v: f.p && f.i ? 'Probabilidad ' + f.p + ' × Impacto ' + f.i + ' = ' + f.p * f.i + ' · Nivel ' + f.nivel : 'Sin evaluar' });
-      B.push({ t: 'kv', k: 'Controles', v: f.controles || '[No registrados]' });
-      B.push({ t: 'rule' });
-    });
-    B.push({ t: 'h2', text: '5. Conclusión final' });
-    this.concFactual().forEach((x) => B.push({ t: 'p', text: x }));
-    if ((s.concFinal || '').trim()) B.push({ t: 'kv', k: 'Auditor', v: s.concFinal.trim() });
-    B.push({ t: 'h2', text: '6. Conclusión integrada: adecuación, conveniencia y eficiencia' });
-    if (!this.isoDoc()) B.push({ t: 'alert', text: 'No se cargó la ISO 19011: la conclusión integrada no se emite. Cargue la norma para habilitarla.' });
-    else {
-      this.dims().forEach((d) => {
-        B.push({ t: 'h3', text: d.title });
-        B.push({ t: 'kv', k: 'Base cuantitativa', v: d.base });
-        const refs = this.isoRefs(d.re);
-        B.push({ t: 'kv', k: 'ISO 19011 cargada', v: refs.length ? refs.join('\n') : 'El texto cargado no contiene el término; el criterio de valoración lo define el auditor.' });
-        B.push({ t: 'kv', k: 'Juicio del auditor', v: d.j || 'Sin determinar' });
-        B.push({ t: 'kv', k: 'Justificación', v: d.note || '[No informada]' });
-      });
-    }
-    B.push({ t: 'h2', text: '7. Puntos pendientes de validación' });
-    const pend = s.findings.filter((f) => !f.validado || f.pendientes > 0);
-    if (!pend.length) B.push({ t: 'p', text: 'Todos los hallazgos fueron marcados como validados y no presentan alertas pendientes.' });
-    pend.forEach((f) => B.push({ t: 'p', text: f.id + ': ' + (f.validado ? 'validado' : 'sin validar') + (f.pendientes ? '; ' + f.pendientes + ' alerta(s) de validación al momento del registro' : '') + (f.norma ? '' : '; sin requisito normativo identificado') + '.' }));
+    B.push({ t: 'h2', text: 'OBJETIVO' });
+    B.push({ t: 'p', text: (s.metaObjetivo || '').trim() || DEF_OBJ });
+    B.push({ t: 'h2', text: 'ALCANCE' });
+    B.push({ t: 'p', text: (s.metaAlcance || '').trim() || NI });
+    B.push({ t: 'h2', text: 'CRITERIOS DE AUDITORÍA' });
+    B.push({ t: 'p', text: this.criteriaText() });
+    const sec = (title, cls, empty) => {
+      B.push({ t: 'h2', text: title });
+      const list = s.findings.filter((f) => f.cls === cls).map((f) => this.reportBullet(f)).filter(Boolean);
+      if (!list.length) B.push({ t: 'p', text: empty });
+      list.forEach((x) => B.push({ t: 'li', text: x }));
+    };
+    sec('FORTALEZAS', 'FO', 'No se registraron fortalezas.');
+    sec('OPORTUNIDADES DE MEJORA', 'OM', 'No se registraron oportunidades de mejora.');
+    sec('OBSERVACIONES', 'OB', 'No se registraron observaciones.');
+    sec('NO CONFORMIDADES', 'NC', 'No se registraron no conformidades.');
+    B.push({ t: 'h2', text: 'RECOMENDACIONES' });
+    const rec = this.recommendations();
+    if (!rec.length) B.push({ t: 'p', text: '[Registre las recomendaciones en la pestaña Informe, una por línea, o como control del auditor en la etapa 6 de cada hallazgo.]' });
+    rec.forEach((x) => B.push({ t: 'li', text: /[.!?]$/.test(x) ? x : x + '.' }));
+    B.push({ t: 'h2', text: 'CONCLUSIÓN FINAL DE LA AUDITORÍA' });
+    B.push({ t: 'p', text: this.finalConclusion() });
     return B;
+  }
+
+  /* ---------- Word (.docx) ---------- */
+  crc32(u8) {
+    let T = this._crcT;
+    if (!T) { T = this._crcT = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; T[n] = c >>> 0; } }
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < u8.length; i++) c = T[(c ^ u8[i]) & 255] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  zipStore(files) {
+    const enc = new TextEncoder();
+    const parts = [];
+    const cd = [];
+    let off = 0;
+    const u16 = (n) => [n & 255, (n >>> 8) & 255];
+    const u32 = (n) => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+    for (const f of files) {
+      const name = enc.encode(f.name);
+      const data = enc.encode(f.data);
+      const crc = this.crc32(data);
+      const head = [0x50, 0x4b, 3, 4].concat(u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0));
+      parts.push(new Uint8Array(head), name, data);
+      cd.push(new Uint8Array([0x50, 0x4b, 1, 2].concat(u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(off))), name);
+      off += head.length + name.length + data.length;
+    }
+    const cdSize = cd.reduce((a, x) => a + x.length, 0);
+    const end = new Uint8Array([0x50, 0x4b, 5, 6].concat(u16(0), u16(0), u16(files.length), u16(files.length), u32(cdSize), u32(off), u16(0)));
+    const all = parts.concat(cd, [end]);
+    const out = new Uint8Array(all.reduce((a, x) => a + x.length, 0));
+    let p = 0;
+    for (const x of all) { out.set(x, p); p += x.length; }
+    return out;
+  }
+
+  docxBuild(blocks) {
+    const x = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const run = (txt, o) => {
+      o = o || {};
+      const pr = (o.b ? '<w:b/>' : '') + (o.color ? '<w:color w:val="' + o.color + '"/>' : '') + '<w:sz w:val="' + (o.sz || 22) + '"/>';
+      return String(txt).split('\n').map((l, i) => (i ? '<w:r><w:br/></w:r>' : '') + '<w:r><w:rPr>' + pr + '</w:rPr><w:t xml:space="preserve">' + x(l) + '</w:t></w:r>').join('');
+    };
+    const para = (inner, ppr) => '<w:p><w:pPr>' + (ppr || '') + '</w:pPr>' + inner + '</w:p>';
+    const body = [];
+    for (const b of blocks) {
+      if (b.t === 'title') body.push(para(run(b.text, { b: true, sz: 36, color: '0B5A66' }), '<w:spacing w:after="60"/>'));
+      else if (b.t === 'sub') body.push(para(run(b.text, { sz: 20, color: '566673' }), '<w:spacing w:after="120"/>'));
+      else if (b.t === 'h2') body.push(para(run(b.text, { b: true, sz: 24, color: '1F4E8C' }), '<w:keepNext/><w:spacing w:before="240" w:after="80"/>'));
+      else if (b.t === 'p') body.push(para(run(b.text), '<w:jc w:val="both"/><w:spacing w:after="120"/>'));
+      else if (b.t === 'li') body.push(para(run('•', {}) + '<w:r><w:tab/></w:r>' + run(b.text), '<w:tabs><w:tab w:val="left" w:pos="360"/></w:tabs><w:ind w:left="360" w:hanging="360"/><w:jc w:val="both"/><w:spacing w:after="60"/>'));
+      else if (b.t === 'kv') body.push(para(run(b.k + ': ', { b: true }) + run(b.v), '<w:spacing w:after="40"/>'));
+      else if (b.t === 'gap') body.push(para('', ''));
+    }
+    const doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body.join('') +
+      '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1418" w:right="1418" w:bottom="1418" w:left="1418" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+    const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:lang w:val="es-CO"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults></w:styles>';
+    return this.zipStore([
+      { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>' },
+      { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>' },
+      { name: 'word/_rels/document.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' },
+      { name: 'word/document.xml', data: doc },
+      { name: 'word/styles.xml', data: styles }
+    ]);
   }
 
   /* ---------- PDF ---------- */
@@ -1637,8 +1780,10 @@ class Component extends DCLogic {
       } else if (b.t === 'sub') {
         need(16); y -= 13; draw(b.text, ML, y, 10.5, false, MUTED); y -= 3;
       } else if (b.t === 'h2') {
-        need(60); y -= 20; draw(b.text, ML, y, 14, true, BRAND); y -= 6;
-        cont.push('0.043 0.353 0.4 RG 0.8 w ' + ML + ' ' + y.toFixed(1) + ' m ' + (W - ML) + ' ' + y.toFixed(1) + ' l S'); y -= 6;
+        need(50); y -= 22; draw(b.text, ML, y, 12, true, '0.122 0.306 0.549'); y -= 6;
+      } else if (b.t === 'li') {
+        wrap(b.text, 10, false, CW - 16).forEach((l, i) => { need(14); y -= 14; if (i === 0) draw('•', ML + 4, y, 10, true, INK); draw(l, ML + 16, y, 10, false, INK); });
+        y -= 3;
       } else if (b.t === 'h3') {
         const ls = wrap(b.text, 11, true, CW);
         need(40); y -= 8;
@@ -2001,6 +2146,10 @@ class Component extends DCLogic {
     });
 
     v.metaAud = s.metaAud; v.metaProc = s.metaProc; v.metaAuditor = s.metaAuditor; v.metaFecha = s.metaFecha; v.metaAlcance = s.metaAlcance;
+    v.metaObjetivo = s.metaObjetivo || DEF_OBJ; v.onMetaObjetivo = setF('metaObjetivo');
+    v.recomText = s.recomText; v.onRecomText = setF('recomText');
+    v.finalConc = this.finalConclusion();
+    v.finalConcIsAuto = !(s.concFinal || '').trim();
     v.onMetaAud = setF('metaAud'); v.onMetaProc = setF('metaProc'); v.onMetaAuditor = setF('metaAuditor'); v.onMetaFecha = setF('metaFecha'); v.onMetaAlcance = setF('metaAlcance');
     v.onGenReport = () => this.upd({ reportOpen: true });
     v.reportOpen = s.reportOpen;
@@ -2011,12 +2160,19 @@ class Component extends DCLogic {
         await this.saveFile('Informe_Auditoria_HILA_' + this.today() + '.pdf', u8, 'application/pdf');
       } catch (e) { this.upd({ dlMsg: 'No fue posible generar el PDF.' }); }
     };
+    v.onDocx = async () => {
+      this.upd({ dlMsg: 'Generando documento Word…', reportOpen: true });
+      try {
+        const u8 = this.docxBuild(this.buildReport());
+        await this.saveFile('Informe_Auditoria_HILA_' + this.today() + '.docx', u8, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      } catch (e) { this.upd({ dlMsg: 'No fue posible generar el documento Word.' }); }
+    };
     v.onCsv = () => this.saveFile('Matriz_Auditoria_HILA_' + this.today() + '.csv', this.csvMatrix(), 'text/csv;charset=utf-8');
     v.dlMsg = s.dlMsg;
     v.hasDlMsg = !!s.dlMsg;
     if (s.reportOpen) {
       v.reportBlocks = this.buildReport().map((b) => ({
-        isTitle: b.t === 'title', isSub: b.t === 'sub', isH2: b.t === 'h2', isH3: b.t === 'h3', isP: b.t === 'p', isKV: b.t === 'kv' || b.t === 'bar', isAlert: b.t === 'alert', isRule: b.t === 'rule', isGap: b.t === 'gap',
+        isTitle: b.t === 'title', isSub: b.t === 'sub', isH2: b.t === 'h2', isH3: b.t === 'h3', isP: b.t === 'p', isKV: b.t === 'kv' || b.t === 'bar', isAlert: b.t === 'alert', isRule: b.t === 'rule', isGap: b.t === 'gap', isLi: b.t === 'li',
         text: b.text || '', k: b.t === 'bar' ? b.label : b.k || '', v: b.t === 'bar' ? String(b.n) : b.v || ''
       }));
     } else v.reportBlocks = [];
