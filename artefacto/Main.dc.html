@@ -34,6 +34,11 @@ button{font-family:inherit}
 .tab:hover{background:#F1EFE7}
 .tab-on{background:#0B5A66;border-color:#0B5A66;color:#FFFFFF}
 .tab-on:hover{background:#0B5A66}
+.navt{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:99px;border:1px solid transparent;background:transparent;color:#C9DEE1;font-weight:600;font-size:14px;letter-spacing:.02em;cursor:pointer;white-space:nowrap}
+.navt:hover{background:#173A45;color:#FFFFFF}
+.navt-on{background:#E1EEF0;color:#0E2A33}
+.navt-on:hover{background:#E1EEF0;color:#0E2A33}
+.navt-cnt{background:#0B5A66;color:#FFFFFF;border-radius:99px;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;padding:0 6px}
 .field{width:100%;font-family:inherit;font-size:15px;line-height:1.5;color:#16232B;background:#FFFFFF;border:1px solid #B9B4A5;border-radius:8px;padding:10px 12px}
 .field:focus,button:focus-visible{outline:2px solid #0B5A66;outline-offset:2px}
 textarea.field{resize:vertical;min-height:110px}
@@ -96,6 +101,13 @@ textarea.field{resize:vertical;min-height:110px}
 </div>
 </div>
 </header>
+<nav aria-label="Secciones de la auditoría" style="position:sticky;top:0;z-index:20;background:#0E2A33;border-top:1px solid #24505C;box-shadow:0 2px 8px rgba(14,42,51,.18);">
+<div role="tablist" style="max-width:1280px;margin:0 auto;padding:10px 32px;display:flex;gap:6px;overflow-x:auto;">
+<sc-for list="{{navTabs}}" as="n" hint-placeholder-count="6">
+<button type="button" role="tab" class="{{n.cls}}" aria-selected="{{n.on}}" onClick="{{n.pick}}"><span>{{n.label}}</span><sc-if value="{{n.hasCnt}}" hint-placeholder-val="{{false}}"><span class="navt-cnt">{{n.cnt}}</span></sc-if></button>
+</sc-for>
+</div>
+</nav>
 
 <div style="max-width:1280px;margin:0 auto;padding:24px 32px 64px;display:flex;flex-direction:column;gap:24px;">
 
@@ -104,6 +116,7 @@ textarea.field{resize:vertical;min-height:110px}
 <div class="small muted">{{persistNote}}</div>
 </div>
 
+<sc-if value="{{vHallazgo}}" hint-placeholder-val="{{false}}">
 <div class="chain" aria-label="Ruta de análisis">
 <span class="chain-i">1 EVIDENCIA</span><span class="chain-a">→</span>
 <span class="chain-i">2 REQUISITO</span><span class="chain-a">→</span>
@@ -113,9 +126,12 @@ textarea.field{resize:vertical;min-height:110px}
 <span class="chain-i">6 CONTROL</span><span class="chain-a">→</span>
 <span class="chain-i">7 CONCLUSIÓN</span>
 </div>
+<sc-if value="{{noLib}}" hint-placeholder-val="{{true}}"><div class="al al-warn" style="align-items:center;flex-wrap:wrap;"><span class="al-tag">Sin fuente</span><span style="flex:1 1 320px;">Aún no hay normas ni documentos institucionales cargados. Sin ellos no se puede identificar norma, numeral ni requisito.</span><button type="button" class="btn btn-ghost btn-sm" onClick="{{goDocs}}">Ir a Normas y documentos</button></div></sc-if>
+</sc-if>
 
 <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:stretch;">
 
+<sc-if value="{{vHallazgo}}" hint-placeholder-val="{{false}}">
 <section class="panel" style="flex:1.4 1 560px;min-width:0;display:flex;flex-direction:column;gap:16px;" aria-label="Ingresar evidencia">
 <div>
 <div class="eyebrow">Paso 1</div>
@@ -163,7 +179,9 @@ textarea.field{resize:vertical;min-height:110px}
 </div>
 </sc-if>
 </section>
+</sc-if>
 
+<sc-if value="{{vDocs}}" hint-placeholder-val="{{false}}">
 <section class="panel" style="flex:1 1 400px;min-width:0;display:flex;flex-direction:column;gap:16px;" aria-label="Fuente normativa">
 <div>
 <div class="eyebrow">Fuente normativa única</div>
@@ -201,14 +219,18 @@ textarea.field{resize:vertical;min-height:110px}
 <div><button type="button" class="btn btn-ghost" onClick="{{onPasteAdd}}">Agregar documento</button></div>
 </div>
 </section>
+</sc-if>
 </div>
 
+<sc-if value="{{vHallazgo}}" hint-placeholder-val="{{false}}">
 <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:center;padding:8px 0;">
 <button type="button" class="btn btn-big" onClick="{{onAnalyze}}">ANALIZAR HALLAZGO</button>
 <button type="button" class="btn btn-ghost btn-big" onClick="{{onClear}}">Limpiar</button>
 </div>
+</sc-if>
 <sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}"><div class="al al-info" role="status">{{toast}}</div></sc-if>
 
+<sc-if value="{{vHallazgo}}" hint-placeholder-val="{{false}}">
 <sc-if value="{{noAnalysis}}" hint-placeholder-val="{{true}}">
 <section class="panel" style="text-align:center;padding:40px 24px;">
 <div class="h3">Resultado del análisis</div>
@@ -409,7 +431,9 @@ textarea.field{resize:vertical;min-height:110px}
 </section>
 </div>
 </sc-if>
+</sc-if>
 
+<sc-if value="{{vResultados}}" hint-placeholder-val="{{false}}">
 <section class="panel" style="display:flex;flex-direction:column;gap:20px;" aria-label="Resultados de la auditoría">
 <div>
 <div class="eyebrow">Consolidado</div>
@@ -457,7 +481,9 @@ textarea.field{resize:vertical;min-height:110px}
 </div>
 </div>
 </section>
+</sc-if>
 
+<sc-if value="{{vMatriz}}" hint-placeholder-val="{{false}}">
 <section class="panel" style="display:flex;flex-direction:column;gap:16px;padding:24px 0 0;overflow:hidden;" aria-label="Matriz consolidada">
 <div style="padding:0 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;">
 <div><div class="eyebrow">Matriz</div><h2 class="h2">Matriz consolidada de auditoría</h2></div>
@@ -491,7 +517,9 @@ textarea.field{resize:vertical;min-height:110px}
 </div>
 </sc-if>
 </section>
+</sc-if>
 
+<sc-if value="{{vConclusion}}" hint-placeholder-val="{{false}}">
 <section class="panel" style="display:flex;flex-direction:column;gap:18px;" aria-label="Conclusión final">
 <div><div class="eyebrow">Conclusión</div><h2 class="h2">Conclusión final</h2></div>
 <div class="small muted">Redactada solo con los datos de la matriz. Es un resumen objetivo: el juicio profesional lo agrega el auditor.</div>
@@ -522,7 +550,9 @@ textarea.field{resize:vertical;min-height:110px}
 </div>
 </sc-if>
 </section>
+</sc-if>
 
+<sc-if value="{{vInforme}}" hint-placeholder-val="{{false}}">
 <section class="panel" style="display:flex;flex-direction:column;gap:18px;" aria-label="Informe">
 <div><div class="eyebrow">Informe</div><h2 class="h2">Informe de auditoría</h2></div>
 <div class="small muted">Complete los datos de la auditoría. Lo que quede vacío aparece en el informe como «No informado»: la aplicación no completa datos por su cuenta.</div>
@@ -557,6 +587,7 @@ textarea.field{resize:vertical;min-height:110px}
 </div>
 </sc-if>
 </section>
+</sc-if>
 
 </div>
 </div>
@@ -602,7 +633,7 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this._st = {
-      evTab: 'texto', text: '', evidences: [], lib: [], pasteName: '', pasteText: '', libMsg: '',
+      view: 'hallazgo', evTab: 'texto', text: '', evidences: [], lib: [], pasteName: '', pasteText: '', libMsg: '',
       metaAud: '', metaProc: '', metaAuditor: '', metaFecha: '', metaAlcance: '',
       analysis: null, selReq: null, clsManual: null, corrected: '', corrDirty: false,
       prob: 0, imp: 0, riskText: '', ctrlText: '', ctrlChosen: {}, riskChosen: {},
@@ -1249,11 +1280,21 @@ class Component extends DCLogic {
     });
   }
 
+  setView(view) {
+    this.upd({ view: view, toast: '' });
+    this.scrollTop();
+  }
+
+  scrollTop() {
+    try { window.scrollTo(0, 0); } catch (e) { /* nada */ }
+  }
+
   editFinding(id) {
     const s = this._st;
     const f = s.findings.find((x) => x.id === id);
     if (!f) return;
-    this.upd({ text: f.evidencia, evidences: [], editingId: id });
+    this.upd({ view: 'hallazgo', text: f.evidencia, evidences: [], editingId: id });
+    this.scrollTop();
     this.analyze();
     const c = this.current();
     let idx = -1;
@@ -1611,6 +1652,19 @@ class Component extends DCLogic {
     v.alertCount = cur ? cur.alerts.filter((x) => x.lv !== 'info').length : 0;
     v.persistNote = s.persistOk === false ? 'Guardado local no disponible en esta vista' : 'Sesión guardada en este navegador';
     v.persistBad = s.persistOk === false;
+
+    const navDefs = [
+      ['hallazgo', 'Nuevo hallazgo', 0], ['docs', 'Normas y documentos', s.lib.length], ['resultados', 'Resultados', 0],
+      ['matriz', 'Matriz consolidada', st.n], ['conclusion', 'Conclusión', 0], ['informe', 'Informe', 0]
+    ];
+    v.navTabs = navDefs.map((n) => ({ label: n[1], cnt: n[2], hasCnt: n[2] > 0, on: s.view === n[0], cls: s.view === n[0] ? 'navt navt-on' : 'navt', pick: () => this.setView(n[0]) }));
+    v.vHallazgo = s.view === 'hallazgo';
+    v.vDocs = s.view === 'docs';
+    v.vResultados = s.view === 'resultados';
+    v.vMatriz = s.view === 'matriz';
+    v.vConclusion = s.view === 'conclusion';
+    v.vInforme = s.view === 'informe';
+    v.goDocs = () => this.setView('docs');
 
     v.tabs = tabDefs.map((t) => ({ label: t[1], cls: s.evTab === t[0] ? 'tab tab-on' : 'tab', on: s.evTab === t[0], pick: () => this.upd({ evTab: t[0] }) }));
     const tdef = tabDefs.find((t) => t[0] === s.evTab) || tabDefs[0];
