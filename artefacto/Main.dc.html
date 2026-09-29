@@ -87,7 +87,7 @@ textarea.field{resize:vertical;min-height:110px}
 <header style="background:#0E2A33;color:#FFFFFF;">
 <div style="max-width:1280px;margin:0 auto;padding:28px 32px;display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between;">
 <div style="display:flex;gap:20px;align-items:center;">
-<div style="width:64px;height:64px;border-radius:12px;background:#E1EEF0;color:#0E2A33;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;letter-spacing:.04em;">HILA</div>
+<img src="/_blob/e6151f7a986e54308626ea7132628847" alt="Logo Hospital Infantil Los Ángeles" style="width:96px;height:96px;flex:0 0 auto;border-radius:50%;background:#FFFFFF;object-fit:contain;padding:4px;box-sizing:border-box;">
 <div>
 <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#A9CDD2;">Hospital Infantil Los Ángeles · Pasto, Nariño</div>
 <h1 class="serif" style="margin:4px 0 2px;font-size:34px;line-height:1.15;font-weight:600;">AUDITORÍA INTERNA HILA VERSIÓN 3</h1>
@@ -370,18 +370,10 @@ textarea.field{resize:vertical;min-height:110px}
 </div>
 <div>
 <div class="lbl">Impacto (1 a 5, lo define el auditor según el PR13_GQ)</div>
-<sc-if value="{{hasPr13}}" hint-placeholder-val="{{false}}">
-<div class="small muted" style="margin-top:6px;">Dimensión del impacto (riesgo asociado):</div>
-<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;" role="group" aria-label="Dimensión del impacto">
-<sc-for list="{{impDims}}" as="o" hint-placeholder-count="6"><button type="button" class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
-</div>
-</sc-if>
 <div style="display:flex;gap:8px;margin-top:8px;" role="group" aria-label="Impacto">
 <sc-for list="{{impOpts}}" as="o" hint-placeholder-count="5"><button type="button" class="{{o.cls}}" onClick="{{o.pick}}">{{o.n}}</button></sc-for>
 </div>
 <sc-if value="{{hasPr13}}" hint-placeholder-val="{{false}}"><div class="small muted" style="margin-top:6px;">1 Insignificante · 2 Menor · 3 Moderado · 4 Mayor · 5 Catastrófico</div></sc-if>
-<sc-if value="{{hasImpDesc}}" hint-placeholder-val="{{false}}"><div class="quote small" style="margin-top:6px;">{{impCat}} · {{impDesc}}<br><span class="muted">PR13_GQ V4 · 5.4 Análisis y valoración del riesgo, impacto</span></div></sc-if>
-<sc-if value="{{needDim}}" hint-placeholder-val="{{false}}"><div class="small st-warn" style="margin-top:6px;">Elija la dimensión del impacto para ver el criterio del PR13_GQ que corresponde a {{impCat}}.</div></sc-if>
 </div>
 <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
 <div style="border-radius:8px;padding:12px 18px;min-width:180px;background: {{riskBg}};"><div class="lbl" style="color:#16232B;">Nivel de riesgo</div><div style="font-size:24px;font-weight:700;">{{riskLevel}}</div></div>
@@ -660,7 +652,7 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this._st = {
-      view: 'hallazgo', base: null, baseState: 'loading', impDim: '', evTab: 'texto', text: '', evidences: [], lib: [], pasteName: '', pasteText: '', libMsg: '',
+      view: 'hallazgo', base: null, baseState: 'loading', evTab: 'texto', text: '', evidences: [], lib: [], pasteName: '', pasteText: '', libMsg: '',
       metaAud: '', metaProc: '', metaAuditor: '', metaFecha: '', metaAlcance: '',
       analysis: null, selReq: null, clsManual: null, corrected: '', corrDirty: false,
       prob: 0, imp: 0, riskText: '', ctrlText: '', ctrlChosen: {}, riskChosen: {},
@@ -1845,13 +1837,6 @@ class Component extends DCLogic {
       const pOpt = pr && s.prob ? pr.prob.find((x) => x.n === s.prob) : null;
       v.hasProbDesc = !!pOpt;
       v.probDesc = pOpt ? s.prob + ' · ' + pOpt.cat + ': ' + pOpt.desc : '';
-      const dim = pr ? pr.dims.find((x) => x.key === s.impDim) : null;
-      v.impDims = pr ? pr.dims.map((x) => ({ label: x.label, cls: s.impDim === x.key ? 'seg seg-on' : 'seg', pick: () => this.upd({ impDim: this._st.impDim === x.key ? '' : x.key }) })) : [];
-      v.hasImpCat = !!(pr && s.imp);
-      v.impCat = pr && s.imp ? s.imp + ' · ' + pr.impCats[s.imp - 1] : '';
-      v.hasImpDesc = !!(dim && s.imp);
-      v.impDesc = dim && s.imp ? dim.label + ': ' + dim.d[s.imp - 1] : '';
-      v.needDim = !!(pr && s.imp && !dim);
       const z = pr && pr.zones[cur.lvl.name];
       v.hasZone = !!z;
       v.zoneText = z ? 'Zona ' + z.zona + ' · acción a tomar: ' + z.accion : '';
