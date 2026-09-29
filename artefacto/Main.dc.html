@@ -319,12 +319,6 @@ textarea.field{resize:vertical;min-height:110px}
 <span style="display:inline-block;font-weight:700;font-size:20px;padding:10px 20px;border-radius:8px;background: {{clsBg}}; color: {{clsFg}};">{{clsLabel}}</span>
 <span class="small muted" style="flex:1 1 300px;">{{clsSourceNote}}</span>
 </div>
-<div style="display:flex;flex-direction:column;gap:6px;">
-<div class="lbl">Criterios de clasificación</div>
-<sc-for list="{{clsCriteria}}" as="k" hint-placeholder-count="4">
-<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:8px;border: {{k.border}}; background: {{k.bg}};"><span class="pill" style="background: {{k.tagBg}}; color: {{k.tagFg}}; min-width:44px;text-align:center;">{{k.short}}</span><span class="small"><strong>{{k.label}}:</strong> {{k.def}}</span></div>
-</sc-for>
-</div>
 <sc-if value="{{hasClsReasons}}" hint-placeholder-val="{{false}}">
 <div style="display:flex;flex-direction:column;gap:8px;">
 <div class="lbl">Expresiones del texto que motivan la sugerencia</div>
@@ -645,17 +639,15 @@ const CUES = {
     /no se consign\w*|sin consignar|sin diligenciar|no (?:esta|estan) diligenciad\w*|registros? incomplet\w*/g
   ],
   FO: [
-    /fortaleza\w*|buenas? practica\w*|practica\w* (?:positiva|destacable|ejemplar)\w*|destac\w*|sobresal\w*|ejemplar\w*|excelente\w*|reconocimiento\w*|proactiv\w*|innovador\w*|compromiso (?:del|de la|de los|con)\b/g
-  ],
-  CU: [
-    /(?<!no )(?<!no se )cumple\w*|(?<!no )(?<!no se )cumplimiento (?:total|pleno|satisfactorio|adecuado)|(?<!no )(?<!no se )(?:se encuentra|esta|estan) (?:implementad|actualizad|documentad|disponible|vigente)\w*/g,
-    /\badecuadamente\b|\beficaz\w*|conforme con\b/g
+    /fortaleza\w*|buenas? practica\w*|destac\w*|sobresal\w*|ejemplar\w*|excelente\w*/g,
+    /(?<!no )(?<!no se )cumple\w*|(?<!no )(?<!no se )cumplimiento (?:total|pleno|satisfactorio|adecuado)/g,
+    /\badecuadamente\b|\beficaz\w*/g
   ],
   OM: [
     /oportunidad\w* de mejora|se recomienda\w*|se sugiere\w*|podria\w* (?:mejorar\w*|fortalecer\w*|optimizar\w*)|seria (?:conveniente|recomendable|oportuno|util)|susceptible\w* de mejora|\bmejorar\b|\boptimizar\b|\bfortalecer\b|\brecomendable\b/g
   ],
   OB: [
-    /requiere\w* (?:atencion|seguimiento|revision|verificacion)|seguimiento|debilidad\w*|parcialmente|en proceso de|se observ\w*|se percibe\w*|podria\w* (?:impactar|afectar|generar|ocasionar|causar|poner|comprometer|materializar)\w*|\bposible\w*|\bpotencial\w*|\beventual\w*|riesgo de|\baclarar\b|pendiente de|no se pudo verificar/g
+    /se observ\w*|se percibe\w*|podria\w* (?:impactar|afectar|generar|ocasionar|causar|poner|comprometer|materializar)\w*|\bposible\w*|\bpotencial\w*|\beventual\w*|riesgo de|\baclarar\b|pendiente de|no se pudo verificar/g
   ]
 };
 const RISK_RE = /riesg|peligr|consecuenc|evento adverso|incidente|dano|vulnerab|amenaza|afecta|seguridad del paciente/;
@@ -1124,8 +1116,8 @@ class Component extends DCLogic {
   /* ---------- motor de análisis (solo texto cargado) ---------- */
   cues(text) {
     const n = this.norm(text);
-    const out = { NC: [], FO: [], OM: [], OB: [], CU: [] };
-    for (const k of ORDER.concat(['CU'])) {
+    const out = { NC: [], FO: [], OM: [], OB: [] };
+    for (const k of ORDER) {
       for (const re of CUES[k]) {
         re.lastIndex = 0;
         let m;
@@ -1142,31 +1134,21 @@ class Component extends DCLogic {
     return out;
   }
 
-  /* Criterios de clasificación:
-     NC: se evidencia el incumplimiento de un requisito, norma o procedimiento.
-     FO: práctica positiva y destacable que genera beneficios al proceso o al sistema.
-     OB: situación que requiere atención o seguimiento, sin incumplimiento comprobado.
-     OM: el proceso cumple los requisitos, pero puede optimizarse para obtener mejores resultados. */
-  suggest(cues, hasReq, text) {
-    const c = { NC: cues.NC.length, FO: cues.FO.length, OM: cues.OM.length, OB: cues.OB.length, CU: (cues.CU || []).length };
-    const n = this.norm(text || '');
-    const citesRule = /\b(?:procedimiento|protocolo|norma|requisito|guia|manual|instructivo|politica|formato|resolucion|decreto|ley|reglamento|lineamiento)\w*/.test(n);
-    const weakNC = c.NC > 0 && cues.NC.every((x) => /^falta de /.test(x.key)) && c.OB > 0;
+  suggest(cues, hasReq) {
+    const c = { NC: cues.NC.length, FO: cues.FO.length, OM: cues.OM.length, OB: cues.OB.length };
     let cls = null;
     let note = '';
-    if (c.NC > 0 && !weakNC) {
-      if (hasReq || citesRule) cls = 'NC';
-      else { cls = 'OB'; note = 'El texto describe una situación negativa, pero no se identifica el requisito, norma o procedimiento incumplido: no es un incumplimiento comprobado y se propone Observación. Si selecciona el requisito en la etapa 2, pasa a No conformidad.'; }
-      if (c.FO > 0) note += (note ? ' ' : '') + 'El texto también contiene expresiones positivas: revise que la redacción no sea contradictoria.';
-    } else if (weakNC) {
+    const weakNC = c.NC > 0 && cues.NC.every((x) => /^falta de /.test(x.key)) && c.OB > 0;
+    if (weakNC) {
       cls = 'OB';
-      note = 'El texto describe una debilidad («falta de…») con un impacto potencial y no un incumplimiento comprobado: se propone Observación. Si hay incumplimiento de un requisito, cámbiela a No conformidad.';
-    } else if (c.OM > 0 && (c.CU > 0 || c.OB === 0)) {
-      cls = 'OM';
-      if (!c.CU) note = 'Se propone Oportunidad de mejora porque el texto plantea optimizar el proceso; confirme que el proceso cumple los requisitos.';
-    } else if (c.OB > 0) cls = 'OB';
-    else if (c.FO > 0) cls = 'FO';
-    else if (c.CU > 0) note = 'El texto indica cumplimiento, pero no describe una práctica destacable (Fortaleza) ni una posibilidad de optimización (Oportunidad de mejora). El auditor debe definir la clasificación.';
+      note = 'El texto describe una debilidad («falta de…») con un impacto potencial y no un incumplimiento verificado: se propone Observación. Si hay incumplimiento de un requisito, el auditor puede cambiarla a No conformidad.';
+    } else if (c.NC > 0) {
+      if (hasReq) cls = 'NC';
+      else { cls = 'OB'; note = 'El texto contiene indicios de incumplimiento, pero no hay un requisito identificado en los documentos cargados. Una no conformidad exige un requisito verificable; se propone Observación hasta que el auditor valide el criterio.'; }
+      if (c.FO > 0) note += (note ? ' ' : '') + 'El texto también contiene expresiones de cumplimiento: revise que la redacción no sea contradictoria.';
+    } else if (c.FO > 0) cls = 'FO';
+    else if (c.OM > 0) cls = 'OM';
+    else if (c.OB > 0) cls = 'OB';
     return { cls, note, counts: c };
   }
 
@@ -1376,7 +1358,7 @@ class Component extends DCLogic {
     let selIdx = s.selReq === null ? (cands.length ? 0 : -1) : s.selReq;
     if (selIdx >= cands.length) selIdx = -1;
     const sel = selIdx >= 0 ? cands[selIdx] : null;
-    const sug = this.suggest(a.cues, !!sel, a.textUsed);
+    const sug = this.suggest(a.cues, !!sel);
     const cls = s.clsManual || sug.cls;
     const auto = this.compose(a, sel, cls);
     const corrected = s.corrDirty ? s.corrected : auto;
@@ -2002,7 +1984,7 @@ class Component extends DCLogic {
 
     v.hasAnalysis = !!cur;
     v.noAnalysis = !cur;
-    ['alerts', 'evUsed', 'cands', 'clsReasons', 'clsCriteria', 'clsOptions', 'riskRefs', 'ctrlRefs', 'probOpts', 'impOpts', 'heat', 'stageConc'].forEach((k) => { v[k] = []; });
+    ['alerts', 'evUsed', 'cands', 'clsReasons', 'clsOptions', 'riskRefs', 'ctrlRefs', 'probOpts', 'impOpts', 'heat', 'stageConc'].forEach((k) => { v[k] = []; });
     ['selNorma', 'selNumeral', 'selTitle', 'selText', 'selConf', 'selShared', 'correctedVal', 'clsLabel', 'clsSourceNote', 'riskText', 'ctrlText', 'riskLevel', 'riskScore', 'scaleLow', 'scaleMod', 'scaleHigh', 'registerLabel'].forEach((k) => { v[k] = ''; });
     ['hasAlerts', 'hasCands', 'noCands', 'noneSelected', 'hasSel', 'noSel', 'corrDirty', 'clsIsAuto', 'clsIsManual', 'hasClsReasons', 'hasRiskRefs', 'noRiskRefs', 'hasCtrlRefs', 'noCtrlRefs', 'registerDisabled'].forEach((k) => { v[k] = false; });
     ['pickNone', 'resetCorrected', 'clsAuto', 'onRegister', 'onCorrected', 'onRiskText', 'onCtrlText', 'onScaleLow', 'onScaleMod', 'onScaleHigh'].forEach((k) => { v[k] = () => {}; });
@@ -2050,13 +2032,6 @@ class Component extends DCLogic {
       v.clsIsAuto = !!(!s.clsManual && cur.sug.cls);
       v.clsIsManual = !!s.clsManual;
       v.clsSourceNote = s.clsManual ? 'Clasificación definida por el auditor.' : cur.sug.cls ? 'Clasificación sugerida a partir de expresiones del texto del auditor. Confirme o cambie.' : 'No hay elementos suficientes para sugerir una clasificación.';
-      const DEF = {
-        NC: 'cuando se evidencia el incumplimiento de un requisito, norma o procedimiento.',
-        FO: 'cuando se identifica una práctica positiva y destacable que genera beneficios al proceso o al sistema.',
-        OB: 'cuando existe una situación que requiere atención o seguimiento, pero no constituye un incumplimiento comprobado.',
-        OM: 'cuando el proceso cumple con los requisitos, pero existe la posibilidad de optimizarlo para obtener mejores resultados.'
-      };
-      v.clsCriteria = ['NC', 'FO', 'OB', 'OM'].map((k) => ({ short: CLS[k].short, label: CLS[k].label, def: DEF[k], tagBg: CLS[k].bg, tagFg: CLS[k].fg, bg: cur.cls === k ? CLS[k].bg : '#FFFFFF', border: cur.cls === k ? '2px solid ' + CLS[k].solid : '1px solid #E4E0D3' }));
       const reasons = [];
       ORDER.forEach((k) => a.cues[k].slice(0, 3).forEach((x) => reasons.push({ tag: CLS[k].short, tagBg: CLS[k].bg, tagFg: CLS[k].fg, text: x.quote })));
       v.clsReasons = reasons.slice(0, 8);
