@@ -187,7 +187,10 @@ textarea.field{resize:vertical;min-height:110px}
 <div class="eyebrow">Fuente normativa única</div>
 <h2 class="h2">Normas y documentos institucionales</h2>
 </div>
-<div class="small muted">Cargue las normas, procedimientos, manuales, guías y protocolos. Formatos: PDF con texto, DOCX, TXT, MD, CSV, HTML. Si un PDF no se lee bien, pegue su texto abajo. Nada externo a estos documentos se usa como criterio.</div>
+<div class="al al-info" style="flex-direction:column;gap:6px;"><div><strong>Base normativa permanente.</strong> Se carga siempre, sin tener que subirla:</div><div>· NTC-ISO 9001:2015, NTC-ISO 14001:2015 e ISO 45001:2018 (capítulos 4 a 10) → etapa 2, Requisito: norma, numeral y requisito.</div><div>· PR13_GQ V4 Gestión de riesgos → etapa 5, Riesgo: escalas de probabilidad e impacto, zonas y acciones.</div></div>
+<sc-if value="{{baseLoading}}" hint-placeholder-val="{{false}}"><div class="small muted">Cargando la base normativa permanente…</div></sc-if>
+<sc-if value="{{baseError}}" hint-placeholder-val="{{false}}"><div class="al al-warn"><span class="al-tag">Base no disponible</span><span>No se pudo cargar la base normativa permanente en esta vista. Puede cargar las normas manualmente abajo.</span></div></sc-if>
+<div class="small muted">Puede agregar otros documentos (procedimientos, manuales, guías, protocolos) y asignarlos a Requisito, Riesgo o Solo consulta. Formatos: PDF con texto, DOCX, TXT, MD, CSV, HTML. Si un PDF no se lee bien, pegue su texto abajo. Nada externo a estos documentos se usa como criterio.</div>
 <div class="drop">
 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0B5A66" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"></path><path d="M14 3v5h5"></path><path d="M9 13h7M9 17h7"></path></svg>
 <div style="font-weight:600;color:#0B4650;margin-top:6px;">Cargar normas y documentos</div>
@@ -199,13 +202,18 @@ textarea.field{resize:vertical;min-height:110px}
 <div style="display:flex;flex-direction:column;gap:10px;">
 <sc-for list="{{lib}}" as="d" hint-placeholder-count="1">
 <div style="border:1px solid #D9D5C9;border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:#FBFAF6;">
+<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;">
 <div style="font-weight:600;word-break:break-word;">{{d.name}}</div>
-<div class="small muted">{{d.meta}}</div>
+<sc-if value="{{d.isBase}}" hint-placeholder-val="{{false}}"><span class="pill" style="background:#E1EEF0;color:#0B4650;">Base permanente</span></sc-if>
+</div>
+<div class="small muted">{{d.roleLabel}} · {{d.meta}}</div>
 <sc-if value="{{d.hasWarn}}" hint-placeholder-val="{{false}}"><div class="small st-warn">{{d.warn}}</div></sc-if>
-<div style="display:flex;flex-wrap:wrap;gap:8px;">
-<button type="button" class="{{d.critCls}}" onClick="{{d.toggle}}">{{d.critLabel}}</button>
+<sc-if value="{{d.notBase}}" hint-placeholder-val="{{true}}">
+<div style="display:flex;flex-wrap:wrap;gap:8px;" role="group" aria-label="Uso del documento">
+<sc-for list="{{d.roleOpts}}" as="o" hint-placeholder-count="3"><button type="button" class="{{o.cls}}" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
 <button type="button" class="btn btn-danger btn-sm" onClick="{{d.remove}}">Quitar</button>
 </div>
+</sc-if>
 </div>
 </sc-for>
 </div>
@@ -288,7 +296,7 @@ textarea.field{resize:vertical;min-height:110px}
 </sc-if>
 <sc-if value="{{hasCands}}" hint-placeholder-val="{{false}}">
 <div style="display:flex;flex-direction:column;gap:8px;">
-<div class="lbl">Requisitos candidatos en los documentos cargados (elija el que corresponde)</div>
+<div class="lbl">Requisitos candidatos en ISO 9001, ISO 14001, ISO 45001 y documentos asignados a Requisito (elija el que corresponde)</div>
 <sc-for list="{{cands}}" as="c" hint-placeholder-count="2">
 <button type="button" class="{{c.cls}}" aria-pressed="{{c.on}}" onClick="{{c.pick}}">
 <span style="font-weight:700;">{{c.idx}}. {{c.cite}}</span>
@@ -345,29 +353,41 @@ textarea.field{resize:vertical;min-height:110px}
 <div><div class="eyebrow">Riesgo</div><div class="h3">Identificación, evaluación y mapa de calor</div></div>
 <div style="display:flex;flex-wrap:wrap;gap:24px;">
 <div style="flex:1 1 380px;min-width:0;display:flex;flex-direction:column;gap:14px;">
-<div class="lbl">Riesgos citados en los documentos cargados</div>
-<sc-if value="{{noRiskRefs}}" hint-placeholder-val="{{true}}"><div class="small muted">Ningún documento cargado menciona un riesgo relacionado con este hallazgo. La aplicación no inventa riesgos: regístrelo manualmente.</div></sc-if>
+<div class="lbl">Riesgos citados en el PR13_GQ Gestión de riesgos y documentos asignados a Riesgo</div>
+<sc-if value="{{noRiskRefs}}" hint-placeholder-val="{{true}}"><div class="small muted">El PR13_GQ no menciona un riesgo relacionado con este hallazgo. La aplicación no inventa riesgos: regístrelo manualmente.</div></sc-if>
 <sc-for list="{{riskRefs}}" as="r" hint-placeholder-count="1">
 <button type="button" class="{{r.cls}}" aria-pressed="{{r.on}}" onClick="{{r.toggle}}"><span>{{r.text}}</span><span class="small muted">{{r.cite}}</span></button>
 </sc-for>
 <label class="lbl" for="riesgo-manual">Riesgo identificado por el auditor</label>
 <textarea id="riesgo-manual" class="field" style="min-height:84px;" placeholder="Descripción del riesgo asociado al hallazgo" value="{{riskText}}" onChange="{{onRiskText}}"></textarea>
 <div>
-<div class="lbl">Probabilidad (1 a 5, la define el auditor)</div>
+<div class="lbl">Probabilidad (1 a 5, la define el auditor según el PR13_GQ)</div>
 <div style="display:flex;gap:8px;margin-top:6px;" role="group" aria-label="Probabilidad">
 <sc-for list="{{probOpts}}" as="o" hint-placeholder-count="5"><button type="button" class="{{o.cls}}" onClick="{{o.pick}}">{{o.n}}</button></sc-for>
 </div>
+<sc-if value="{{hasPr13}}" hint-placeholder-val="{{false}}"><div class="small muted" style="margin-top:6px;">1 Raro · 2 Improbable · 3 Posible · 4 Probable · 5 Casi seguro</div></sc-if>
+<sc-if value="{{hasProbDesc}}" hint-placeholder-val="{{false}}"><div class="quote small" style="margin-top:6px;">{{probDesc}}<br><span class="muted">PR13_GQ V4 · 5.4 Análisis y valoración del riesgo, escala de probabilidad</span></div></sc-if>
 </div>
 <div>
-<div class="lbl">Impacto (1 a 5, lo define el auditor)</div>
-<div style="display:flex;gap:8px;margin-top:6px;" role="group" aria-label="Impacto">
+<div class="lbl">Impacto (1 a 5, lo define el auditor según el PR13_GQ)</div>
+<sc-if value="{{hasPr13}}" hint-placeholder-val="{{false}}">
+<div class="small muted" style="margin-top:6px;">Dimensión del impacto (riesgo asociado):</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;" role="group" aria-label="Dimensión del impacto">
+<sc-for list="{{impDims}}" as="o" hint-placeholder-count="6"><button type="button" class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
+</div>
+</sc-if>
+<div style="display:flex;gap:8px;margin-top:8px;" role="group" aria-label="Impacto">
 <sc-for list="{{impOpts}}" as="o" hint-placeholder-count="5"><button type="button" class="{{o.cls}}" onClick="{{o.pick}}">{{o.n}}</button></sc-for>
 </div>
+<sc-if value="{{hasPr13}}" hint-placeholder-val="{{false}}"><div class="small muted" style="margin-top:6px;">1 Insignificante · 2 Menor · 3 Moderado · 4 Mayor · 5 Catastrófico</div></sc-if>
+<sc-if value="{{hasImpDesc}}" hint-placeholder-val="{{false}}"><div class="quote small" style="margin-top:6px;">{{impCat}} · {{impDesc}}<br><span class="muted">PR13_GQ V4 · 5.4 Análisis y valoración del riesgo, impacto</span></div></sc-if>
+<sc-if value="{{needDim}}" hint-placeholder-val="{{false}}"><div class="small st-warn" style="margin-top:6px;">Elija la dimensión del impacto para ver el criterio del PR13_GQ que corresponde a {{impCat}}.</div></sc-if>
 </div>
 <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
 <div style="border-radius:8px;padding:12px 18px;min-width:180px;background: {{riskBg}};"><div class="lbl" style="color:#16232B;">Nivel de riesgo</div><div style="font-size:24px;font-weight:700;">{{riskLevel}}</div></div>
-<div class="small muted">Puntaje = probabilidad × impacto: <strong style="color:#16232B;">{{riskScore}}</strong></div>
+<div class="small muted">Riesgo inherente = probabilidad × impacto (PR13_GQ · 5.5): <strong style="color:#16232B;">{{riskScore}}</strong></div>
 </div>
+<sc-if value="{{hasZone}}" hint-placeholder-val="{{false}}"><div class="quote small">{{zoneText}}<br>{{pr13Nota}}<br><span class="muted">PR13_GQ V4 · 5.6 Tratamiento de riesgos inherentes</span></div></sc-if>
 </div>
 <div style="flex:1 1 380px;min-width:0;display:flex;flex-direction:column;gap:12px;">
 <div class="lbl">Mapa de calor 5 × 5</div>
@@ -627,13 +647,20 @@ const CTRL_RE = /\bdebe\w*|deber\w*|control\w*|verific\w*|revis\w*|document\w*|r
 const AFM = '278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584'.split(',').map(Number);
 const SUFFIX = ['aciones', 'amientos', 'imientos', 'idades', 'adores', 'acion', 'amiento', 'imiento', 'idad', 'mente', 'ador', 'ando', 'iendo', 'antes', 'ante', 'ables', 'able', 'ibles', 'ible', 'ados', 'adas', 'idos', 'idas', 'ado', 'ada', 'ido', 'ida', 'ares', 'eres', 'ires', 'ar', 'er', 'ir', 'ias', 'ios', 'ia', 'io', 'os', 'as', 'es', 'o', 'a', 'e', 's'];
 const LS_KEY = 'hila_v3_auditoria';
+const BASE_URL = '/_blob/889af1251e9b47e3f4c978339788035b';
+const BASE_DUP_RE = /9001|14001|45001|pr ?13/;
+const ROLES = {
+  req: { label: 'Requisito (etapa 2)', short: 'Requisito' },
+  risk: { label: 'Riesgo (etapa 5)', short: 'Riesgo' },
+  method: { label: 'Solo consulta', short: 'Consulta' }
+};
 const PKEYS = ['lib', 'findings', 'metaAud', 'metaProc', 'metaAuditor', 'metaFecha', 'metaAlcance', 'scale', 'conc', 'concFinal', 'nextId'];
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this._st = {
-      view: 'hallazgo', evTab: 'texto', text: '', evidences: [], lib: [], pasteName: '', pasteText: '', libMsg: '',
+      view: 'hallazgo', base: null, baseState: 'loading', impDim: '', evTab: 'texto', text: '', evidences: [], lib: [], pasteName: '', pasteText: '', libMsg: '',
       metaAud: '', metaProc: '', metaAuditor: '', metaFecha: '', metaAlcance: '',
       analysis: null, selReq: null, clsManual: null, corrected: '', corrDirty: false,
       prob: 0, imp: 0, riskText: '', ctrlText: '', ctrlChosen: {}, riskChosen: {},
@@ -648,6 +675,7 @@ class Component extends DCLogic {
   }
 
   componentDidMount() {
+    this.loadBase();
     try {
       const raw = window.localStorage && window.localStorage.getItem(LS_KEY);
       if (!raw) { this.upd({ persistOk: true }); return; }
@@ -656,8 +684,10 @@ class Component extends DCLogic {
       if (d.lib && d.lib.length) {
         patch.lib = d.lib.map((x) => {
           const b = this.buildUnits(x.id, x.name, x.text);
-          return { id: x.id, name: x.name, text: x.text, units: b.units, numbered: b.numbered, crit: x.crit !== false, chars: x.text.length, warn: b.numbered < 3 ? 'No se identificó numeración: los requisitos se citan por párrafo (numeral s/n) y requieren validación.' : '' };
+          const role = ROLES[x.role] ? x.role : (x.crit === false ? 'method' : this.defaultRole(x.name));
+          return { id: x.id, name: x.name, text: x.text, units: b.units, numbered: b.numbered, role, chars: x.text.length, warn: b.numbered < 3 ? 'No se identificó numeración: los requisitos se citan por párrafo (numeral s/n) y requieren validación.' : '' };
         });
+        patch.lib = this._st.lib.filter((x) => x.base).concat(this.dropBaseDups(patch.lib));
         this._idc = 1 + Math.max(0, ...d.lib.map((x) => parseInt(String(x.id).slice(1), 10) || 0));
       }
       ['findings', 'metaAud', 'metaProc', 'metaAuditor', 'metaFecha', 'metaAlcance', 'scale', 'conc', 'concFinal', 'nextId'].forEach((k) => { if (d[k] !== undefined) patch[k] = d[k]; });
@@ -683,7 +713,7 @@ class Component extends DCLogic {
     try {
       const payload = {
         v: 1,
-        lib: s.lib.map((d) => ({ id: d.id, name: d.name, text: d.text, crit: d.crit })),
+        lib: s.lib.filter((d) => !d.base).map((d) => ({ id: d.id, name: d.name, text: d.text, role: d.role })),
         findings: s.findings, metaAud: s.metaAud, metaProc: s.metaProc, metaAuditor: s.metaAuditor, metaFecha: s.metaFecha, metaAlcance: s.metaAlcance,
         scale: s.scale, conc: s.conc, concFinal: s.concFinal, nextId: s.nextId
       };
@@ -732,7 +762,7 @@ class Component extends DCLogic {
     const flush = () => {
       if (cur) {
         const t = cur.lines.join(' ').replace(/\s+/g, ' ').trim();
-        if (t.length >= 12) units.push({ docId, docName, numeral: cur.numeral, title: cur.title, text: t.slice(0, 1800) });
+        if (t.length >= 12) units.push({ docId, docName, numeral: cur.numeral, title: cur.title, text: t.slice(0, 4000) });
         cur = null;
       }
     };
@@ -793,9 +823,44 @@ class Component extends DCLogic {
   addDoc(name, text, warn) {
     const id = 'D' + (this._idc++);
     const b = this.buildUnits(id, name, text);
-    const crit = !/19011/.test(this.norm(name));
+    const role = this.defaultRole(name);
     const w = warn || (b.numbered < 3 ? 'No se identificó numeración: los requisitos se citan por párrafo (numeral s/n) y requieren validación.' : '');
-    return { id, name, text, units: b.units, numbered: b.numbered, crit, chars: text.length, warn: w };
+    return { id, name, text, units: b.units, numbered: b.numbered, role, chars: text.length, warn: w };
+  }
+
+  defaultRole(name) {
+    const n = this.norm(name || '');
+    if (/19011/.test(n)) return 'method';
+    if (/pr ?13|riesg/.test(n)) return 'risk';
+    return 'req';
+  }
+
+  // Si la base permanente está cargada, se descartan copias manuales de las mismas normas para no duplicar candidatos.
+  dropBaseDups(list) {
+    if (!this._st.base) return list;
+    return list.filter((d) => !BASE_DUP_RE.test(this.norm(d.name)));
+  }
+
+  async loadBase() {
+    try {
+      const r = await fetch(BASE_URL);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      const docs = data.docs.map((x) => {
+        const b = this.buildUnits('B-' + x.key, x.name, x.text);
+        return { id: 'B-' + x.key, name: x.name, text: x.text, units: b.units, numbered: b.numbered, role: x.role, base: true, chars: x.text.length, warn: '' };
+      });
+      this._st.base = data.pr13;
+      const own = this._st.lib.filter((d) => !d.base);
+      const kept = this.dropBaseDups(own);
+      const dropped = own.length - kept.length;
+      this.upd({
+        base: data.pr13, baseState: 'ok', lib: docs.concat(kept),
+        libMsg: dropped ? 'Se retiraron ' + dropped + ' copia(s) cargadas manualmente de normas que ya forman parte de la base permanente.' : this._st.libMsg
+      }, dropped === 0);
+    } catch (e) {
+      this.upd({ baseState: 'error' }, true);
+    }
   }
 
   /* ---------- lectura de archivos ---------- */
@@ -1073,8 +1138,8 @@ class Component extends DCLogic {
     return { cls, note, counts: c };
   }
 
-  rank(textUsed) {
-    const docs = this._st.lib.filter((d) => d.crit);
+  rank(textUsed, roles) {
+    const docs = this._st.lib.filter((d) => roles.indexOf(d.role) >= 0);
     const units = [];
     for (const d of docs) for (const u of d.units) units.push(u);
     if (!units.length) return { res: [], cands: [], idf: null, q: [], qmap: new Map() };
@@ -1177,15 +1242,15 @@ class Component extends DCLogic {
       else parts.push(txt);
     }
     const textUsed = parts.join('\n');
-    const a = { ranAt: Date.now(), textUsed, brief: brief.join(' '), used, empty: !textUsed.trim(), cands: [], cues: { NC: [], FO: [], OM: [], OB: [] }, riskRefs: [], ctrlRefs: [], qmap: [], hadLib: s.lib.length > 0, hadCrit: s.lib.some((d) => d.crit) };
+    const a = { ranAt: Date.now(), textUsed, brief: brief.join(' '), used, empty: !textUsed.trim(), cands: [], cues: { NC: [], FO: [], OM: [], OB: [] }, riskRefs: [], ctrlRefs: [], qmap: [], hadLib: s.lib.length > 0, hadCrit: s.lib.some((d) => d.role === 'req'), hadRisk: s.lib.some((d) => d.role === 'risk') };
     if (!a.empty) {
       a.cues = this.cues(textUsed);
-      const rk = this.rank(textUsed);
+      const rk = this.rank(textUsed, ['req']);
       a.cands = rk.cands;
-      if (rk.idf) {
-        a.riskRefs = this.sentenceRefs(rk, RISK_RE, 'riesg', 3);
-        a.ctrlRefs = this.sentenceRefs(rk, CTRL_RE, '', 4);
-      }
+      const rkRisk = this.rank(textUsed, ['risk']);
+      if (rkRisk.idf) a.riskRefs = this.sentenceRefs(rkRisk, RISK_RE, 'riesg', 3);
+      const rkCtrl = this.rank(textUsed, ['req', 'risk']);
+      if (rkCtrl.idf) a.ctrlRefs = this.sentenceRefs(rkCtrl, CTRL_RE, '', 4);
     }
     this.upd({ analysis: a, selReq: null, clsManual: null, corrected: '', corrDirty: false, prob: 0, imp: 0, riskText: '', ctrlText: '', ctrlChosen: {}, riskChosen: {}, editingId: this._st.editingId });
   }
@@ -1235,7 +1300,7 @@ class Component extends DCLogic {
     if (a.empty) A('crit', 'No hay texto que analizar. Escriba el hallazgo o cargue evidencia con descripción del auditor.');
     if (!a.empty) {
       if (!a.hadLib) A('crit', 'No hay documentos normativos cargados. Sin una fuente normativa no es posible identificar norma, numeral ni requisito. Requiere validación del auditor.');
-      else if (!a.hadCrit) A('crit', 'Todos los documentos cargados están marcados como «no criterio». Active al menos un documento como criterio de hallazgos.');
+      else if (!a.hadCrit) A('crit', 'Ningún documento está asignado a la etapa 2 (Requisito). Asigne al menos una norma como fuente de requisitos.');
       else if (!cands.length) A('warn', 'No se encontró en los documentos cargados un requisito con coincidencia suficiente (mínimo 2 términos). Norma, numeral y requisito requieren validación del auditor.');
       if (sel && sel.conf === 'Baja') A('warn', 'Coincidencia léxica baja con el requisito propuesto (' + sel.nShared + ' términos). Requiere validación del auditor.');
       if (sel && sel.numeral === 's/n') A('warn', 'El numeral no pudo identificarse en el documento cargado (numeral s/n). Requiere validación del auditor.');
@@ -1247,7 +1312,8 @@ class Component extends DCLogic {
         if (e.kind !== 'pdf' && !(e.note || '').trim()) A('warn', 'El archivo «' + e.name + '» no tiene descripción del auditor: su contenido no se puede analizar ni citar.');
         if (e.kind === 'pdf' && !e.extractOk && !(e.note || '').trim()) A('warn', 'No se pudo extraer texto del PDF «' + e.name + '»: describa su contenido.');
       }
-      if (!a.riskRefs.length && !(s.riskText || '').trim()) A('info', 'No se identificaron riesgos en los documentos cargados. Registre manualmente el riesgo asociado o déjelo sin evaluar.');
+      if (!a.hadRisk) A('warn', 'No hay documento de gestión de riesgos (PR13_GQ) asignado a la etapa 5 (Riesgo).');
+      else if (!a.riskRefs.length && !(s.riskText || '').trim()) A('info', 'No se identificaron en el PR13_GQ riesgos relacionados con este hallazgo. Registre manualmente el riesgo asociado o déjelo sin evaluar.');
       if (!s.prob || !s.imp) A('info', 'Probabilidad e impacto sin definir: el nivel de riesgo queda «Sin evaluar». La aplicación no asigna valores por su cuenta.');
       if (!ctrlRefs.length && !(s.ctrlText || '').trim()) A('info', 'No hay controles adoptados ni registrados. Los controles solo pueden provenir de los documentos cargados o del auditor.');
     }
@@ -1401,7 +1467,7 @@ class Component extends DCLogic {
     B.push({ t: 'kv', k: 'Alcance', v: s.metaAlcance || NI });
     B.push({ t: 'h2', text: '2. Fuente normativa utilizada' });
     if (!s.lib.length) B.push({ t: 'alert', text: 'No se cargaron documentos normativos. Ningún requisito pudo identificarse con la aplicación; toda la información normativa requiere validación del auditor.' });
-    s.lib.forEach((d) => B.push({ t: 'kv', k: d.crit ? 'Criterio' : 'Metodología', v: d.name + ' · ' + d.units.length + ' unidades normativas' + (d.warn ? ' · ' + d.warn : '') }));
+    s.lib.forEach((d) => B.push({ t: 'kv', k: (ROLES[d.role] || ROLES.method).short + (d.base ? ' · base' : ''), v: d.name + ' · ' + d.units.length + ' unidades normativas' + (d.warn ? ' · ' + d.warn : '') }));
     B.push({ t: 'p', text: 'La aplicación solo utiliza como fundamento normativo los documentos cargados por el auditor. Toda coincidencia sugerida es lexical y debe ser validada por el auditor.' });
     B.push({ t: 'h2', text: '3. Resultados de la auditoría' });
     ORDER.forEach((k) => B.push({ t: 'bar', label: CLS[k].label, n: st.counts[k], max: Math.max(1, st.n), color: CLS[k].solid }));
@@ -1695,10 +1761,12 @@ class Component extends DCLogic {
     v.onLibFiles = (e) => this.onLibFiles(e);
     v.lib = s.lib.map((d) => ({
       id: d.id, name: d.name, meta: d.units.length + ' unidades normativas · ' + Math.round(d.chars / 1000) + ' mil caracteres',
-      warn: d.warn, hasWarn: !!d.warn, critLabel: d.crit ? 'Criterio de hallazgos' : 'Solo metodología / consulta', critCls: d.crit ? 'tog tog-on' : 'tog',
-      toggle: () => this.upd({ lib: this._st.lib.map((x) => (x.id === d.id ? Object.assign({}, x, { crit: !x.crit }) : x)) }),
+      warn: d.warn, hasWarn: !!d.warn, isBase: !!d.base, notBase: !d.base, roleLabel: (ROLES[d.role] || ROLES.method).label,
+      roleOpts: Object.keys(ROLES).map((k) => ({ label: ROLES[k].label, on: d.role === k, cls: d.role === k ? 'tog tog-on' : 'tog', pick: () => this.upd({ lib: this._st.lib.map((x) => (x.id === d.id ? Object.assign({}, x, { role: k }) : x)) }) })),
       remove: () => this.upd({ lib: this._st.lib.filter((x) => x.id !== d.id) })
     }));
+    v.baseLoading = s.baseState === 'loading';
+    v.baseError = s.baseState === 'error';
     v.hasLib = s.lib.length > 0;
     v.noLib = s.lib.length === 0;
     v.libMsg = s.libMsg;
@@ -1772,6 +1840,22 @@ class Component extends DCLogic {
       v.onCtrlText = setF('ctrlText');
       v.probOpts = [1, 2, 3, 4, 5].map((n) => ({ n, cls: s.prob === n ? 'num num-on' : 'num', pick: () => this.upd({ prob: s.prob === n ? 0 : n }) }));
       v.impOpts = [1, 2, 3, 4, 5].map((n) => ({ n, cls: s.imp === n ? 'num num-on' : 'num', pick: () => this.upd({ imp: s.imp === n ? 0 : n }) }));
+      const pr = s.base;
+      v.hasPr13 = !!pr;
+      const pOpt = pr && s.prob ? pr.prob.find((x) => x.n === s.prob) : null;
+      v.hasProbDesc = !!pOpt;
+      v.probDesc = pOpt ? s.prob + ' · ' + pOpt.cat + ': ' + pOpt.desc : '';
+      const dim = pr ? pr.dims.find((x) => x.key === s.impDim) : null;
+      v.impDims = pr ? pr.dims.map((x) => ({ label: x.label, cls: s.impDim === x.key ? 'seg seg-on' : 'seg', pick: () => this.upd({ impDim: this._st.impDim === x.key ? '' : x.key }) })) : [];
+      v.hasImpCat = !!(pr && s.imp);
+      v.impCat = pr && s.imp ? s.imp + ' · ' + pr.impCats[s.imp - 1] : '';
+      v.hasImpDesc = !!(dim && s.imp);
+      v.impDesc = dim && s.imp ? dim.label + ': ' + dim.d[s.imp - 1] : '';
+      v.needDim = !!(pr && s.imp && !dim);
+      const z = pr && pr.zones[cur.lvl.name];
+      v.hasZone = !!z;
+      v.zoneText = z ? 'Zona ' + z.zona + ' · acción a tomar: ' + z.accion : '';
+      v.pr13Nota = pr ? pr.nota : '';
       v.riskLevel = cur.lvl.name;
       v.riskScore = cur.lvl.score ? String(cur.lvl.score) : '—';
       v.riskBg = cur.lvl.bg;
