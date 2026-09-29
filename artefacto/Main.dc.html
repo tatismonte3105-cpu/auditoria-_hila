@@ -120,8 +120,8 @@ textarea.field{resize:vertical;min-height:110px}
 <div class="chain" aria-label="Ruta de análisis">
 <span class="chain-i">1 EVIDENCIA</span><span class="chain-a">→</span>
 <span class="chain-i">2 REQUISITO</span><span class="chain-a">→</span>
-<span class="chain-i">3 HALLAZGO</span><span class="chain-a">→</span>
-<span class="chain-i">4 CLASIFICACIÓN</span><span class="chain-a">→</span>
+<span class="chain-i">3 CLASIFICACIÓN</span><span class="chain-a">→</span>
+<span class="chain-i">4 HALLAZGO</span><span class="chain-a">→</span>
 <span class="chain-i">5 RIESGO</span><span class="chain-a">→</span>
 <span class="chain-i">6 CONTROL</span><span class="chain-a">→</span>
 <span class="chain-i">7 CONCLUSIÓN</span>
@@ -314,17 +314,6 @@ textarea.field{resize:vertical;min-height:110px}
 <section class="stage">
 <div class="stage-n" aria-hidden="true">3</div>
 <div class="stage-body">
-<div><div class="eyebrow">Hallazgo</div><div class="h3">Redacción corregida</div></div>
-<div class="small muted">Se ordena en evidencia, criterio y hallazgo, corrigiendo espacios, puntuación y mayúsculas. Ningún hecho se agrega: el contenido proviene del texto del auditor y del requisito seleccionado. Puede editarla.</div>
-<label class="lbl" for="hallazgo-corregido">Redacción del hallazgo</label>
-<textarea id="hallazgo-corregido" class="field" style="min-height:190px;" value="{{correctedVal}}" onChange="{{onCorrected}}"></textarea>
-<sc-if value="{{corrDirty}}" hint-placeholder-val="{{false}}"><div><button type="button" class="btn btn-ghost btn-sm" onClick="{{resetCorrected}}">Restablecer redacción automática</button></div></sc-if>
-</div>
-</section>
-
-<section class="stage">
-<div class="stage-n" aria-hidden="true">4</div>
-<div class="stage-body">
 <div><div class="eyebrow">Clasificación</div><div class="h3">No conformidad, fortaleza, observación u oportunidad de mejora</div></div>
 <div style="display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;">
 <span style="display:inline-block;font-weight:700;font-size:20px;padding:10px 20px;border-radius:8px;background: {{clsBg}}; color: {{clsFg}};">{{clsLabel}}</span>
@@ -344,6 +333,17 @@ textarea.field{resize:vertical;min-height:110px}
 </sc-for>
 <sc-if value="{{clsIsManual}}" hint-placeholder-val="{{false}}"><button type="button" class="btn btn-ghost btn-sm" onClick="{{clsAuto}}">Volver a la sugerencia</button></sc-if>
 </div>
+</div>
+</section>
+
+<section class="stage">
+<div class="stage-n" aria-hidden="true">4</div>
+<div class="stage-body">
+<div><div class="eyebrow">Hallazgo</div><div class="h3">Redacción corregida</div></div>
+<div class="small muted">Se ordena en evidencia, criterio y hallazgo, corrigiendo espacios, puntuación y mayúsculas. Ningún hecho se agrega: el contenido proviene del texto del auditor y del requisito seleccionado. Puede editarla.</div>
+<label class="lbl" for="hallazgo-corregido">Redacción del hallazgo</label>
+<textarea id="hallazgo-corregido" class="field" style="min-height:190px;" value="{{correctedVal}}" onChange="{{onCorrected}}"></textarea>
+<sc-if value="{{corrDirty}}" hint-placeholder-val="{{false}}"><div><button type="button" class="btn btn-ghost btn-sm" onClick="{{resetCorrected}}">Restablecer redacción automática</button></div></sc-if>
 </div>
 </section>
 
