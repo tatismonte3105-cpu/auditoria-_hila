@@ -714,6 +714,9 @@ const AFM = '278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556
 const SUFFIX = ['aciones', 'amientos', 'imientos', 'idades', 'adores', 'acion', 'amiento', 'imiento', 'idad', 'mente', 'ador', 'ando', 'iendo', 'antes', 'ante', 'ables', 'able', 'ibles', 'ible', 'ados', 'adas', 'idos', 'idas', 'ado', 'ada', 'ido', 'ida', 'ares', 'eres', 'ires', 'ar', 'er', 'ir', 'ias', 'ios', 'ia', 'io', 'os', 'as', 'es', 'o', 'a', 'e', 's'];
 const LS_KEY = 'hila_v3_auditoria';
 const BASE_URL = '/_blob/889af1251e9b47e3f4c978339788035b';
+// Plantilla institucional (hoja membretada) para el informe en PDF y Word.
+const TPL_URL = '/_blob/6d782a5bcb004254cb6489532893e402';
+const TPL_W = 1103, TPL_H = 1426;
 const BASE_DUP_RE = /9001|14001|45001|pr ?13/;
 const INTRO = 'Durante la auditoría interna realizada en el proceso de Atención al Usuario del Hospital Infantil Los Ángeles de Pasto, el auditor observó';
 const INTRO_OLD = 'Durante la auditoría interna realizada en el proceso de Atención al Usuario del Hospital Infantil Los Ángeles de Pasto, el auditor observó la interacción comunicativa entre los usuarios y el personal del servicio de atención al cliente, sin que se registraran en la redacción original el período auditado, el tamaño de la muestra revisada, el método de recolección de evidencia ni los criterios objetivos empleados para la valoración.';
@@ -1808,7 +1811,7 @@ class Component extends DCLogic {
     const u32 = (n) => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
     for (const f of files) {
       const name = enc.encode(f.name);
-      const data = enc.encode(f.data);
+      const data = typeof f.data === 'string' ? enc.encode(f.data) : f.data;
       const crc = this.crc32(data);
       const head = [0x50, 0x4b, 3, 4].concat(u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0));
       parts.push(new Uint8Array(head), name, data);
@@ -1824,7 +1827,17 @@ class Component extends DCLogic {
     return out;
   }
 
-  docxBuild(blocks) {
+  async loadTemplate() {
+    if (this._tpl) return this._tpl;
+    try {
+      const r = await fetch(TPL_URL);
+      if (!r.ok) return null;
+      this._tpl = new Uint8Array(await r.arrayBuffer());
+      return this._tpl;
+    } catch (e) { return null; }
+  }
+
+  docxBuild(blocks, tpl) {
     const x = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const run = (txt, o) => {
       o = o || {};
@@ -1842,16 +1855,26 @@ class Component extends DCLogic {
       else if (b.t === 'kv') body.push(para(run(b.k + ': ', { b: true }) + run(b.v), '<w:spacing w:after="40"/>'));
       else if (b.t === 'gap') body.push(para('', ''));
     }
-    const doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body.join('') +
-      '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1418" w:right="1418" w:bottom="1418" w:left="1418" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+    const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+    // Con plantilla: márgenes dentro del área blanca de la hoja membretada (bajo el encabezado, sobre el pie y a la izquierda de los sellos).
+    const mar = tpl ? '<w:pgMar w:top="2800" w:right="1640" w:bottom="2560" w:left="1120" w:header="0" w:footer="0" w:gutter="0"/>' : '<w:pgMar w:top="1418" w:right="1418" w:bottom="1418" w:left="1418" w:header="708" w:footer="708" w:gutter="0"/>';
+    const doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + W_NS + '><w:body>' + body.join('') +
+      '<w:sectPr>' + (tpl ? '<w:headerReference w:type="default" r:id="rId2"/>' : '') + '<w:pgSz w:w="12240" w:h="15840"/>' + mar + '</w:sectPr></w:body></w:document>';
+    const hdr = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ' + W_NS + ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:p><w:r><w:drawing>' +
+      '<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="0" behindDoc="1" locked="1" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="page"><wp:posOffset>0</wp:posOffset></wp:positionH><wp:positionV relativeFrom="page"><wp:posOffset>0</wp:posOffset></wp:positionV><wp:extent cx="7772400" cy="10058400"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/><wp:docPr id="1" name="Plantilla HILA"/><wp:cNvGraphicFramePr/>' +
+      '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="1" name="plantilla.jpeg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdImg"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="7772400" cy="10058400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r></w:p></w:hdr>';
     const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:lang w:val="es-CO"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults></w:styles>';
     return this.zipStore([
-      { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>' },
+      { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' + (tpl ? '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>' : '') + '</Types>' },
       { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>' },
-      { name: 'word/_rels/document.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' },
+      { name: 'word/_rels/document.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' + (tpl ? '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>' : '') + '</Relationships>' },
       { name: 'word/document.xml', data: doc },
       { name: 'word/styles.xml', data: styles }
-    ]);
+    ].concat(tpl ? [
+      { name: 'word/header1.xml', data: hdr },
+      { name: 'word/_rels/header1.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdImg" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/plantilla.jpeg"/></Relationships>' },
+      { name: 'word/media/plantilla.jpeg', data: tpl }
+    ] : []));
   }
 
   /* ---------- PDF ---------- */
@@ -1878,8 +1901,9 @@ class Component extends DCLogic {
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((x) => (x / 255).toFixed(3)).join(' ');
   }
 
-  pdfBuild(blocks) {
-    const W = 612, H = 792, ML = 56, MT = 62, MB = 62, CW = W - 2 * ML;
+  pdfBuild(blocks, tpl) {
+    // Con plantilla: el texto va dentro del área blanca de la hoja membretada.
+    const W = 612, H = 792, ML = 56, MT = tpl ? 140 : 62, MB = tpl ? 128 : 62, CW = tpl ? 530 - ML : W - 2 * ML;
     const pages = [];
     let cont = [];
     let y = H - MT;
@@ -1964,14 +1988,15 @@ class Component extends DCLogic {
         y -= 8;
       } else if (b.t === 'rule') {
         need(10); y -= 4;
-        cont.push('0.85 0.835 0.79 RG 0.5 w ' + ML + ' ' + y.toFixed(1) + ' m ' + (W - ML) + ' ' + y.toFixed(1) + ' l S'); y -= 6;
+        cont.push('0.85 0.835 0.79 RG 0.5 w ' + ML + ' ' + y.toFixed(1) + ' m ' + (ML + CW) + ' ' + y.toFixed(1) + ' l S'); y -= 6;
       } else if (b.t === 'gap') {
         y -= b.n || 8;
       }
     }
     pages.push(cont.join('\n'));
     const N = pages.length;
-    const contents = pages.map((c, i) => c + '\n' + MUTED + ' rg BT /F1 8.5 Tf ' + ML + ' 34 Td (' + this.pdfEnc('Hospital Infantil Los Ángeles · Auditoría Interna HILA Versión 3 · Página ' + (i + 1) + ' de ' + N) + ') Tj ET');
+    const foot = (i) => tpl ? MUTED + ' rg BT /F1 8 Tf ' + (ML + CW - 60) + ' ' + (MB - 14) + ' Td (' + this.pdfEnc('Página ' + (i + 1) + ' de ' + N) + ') Tj ET' : MUTED + ' rg BT /F1 8.5 Tf ' + ML + ' 34 Td (' + this.pdfEnc('Hospital Infantil Los Ángeles · Auditoría Interna HILA Versión 3 · Página ' + (i + 1) + ' de ' + N) + ') Tj ET';
+    const contents = pages.map((c, i) => (tpl ? 'q ' + W + ' 0 0 ' + H + ' 0 0 cm /Im1 Do Q\n' : '') + c + '\n' + foot(i));
     let out = '%PDF-1.4\n';
     const off = [];
     const add = (id, body) => { off[id] = out.length; out += id + ' 0 obj\n' + body + '\nendobj\n'; };
@@ -1985,9 +2010,15 @@ class Component extends DCLogic {
     for (let i = 0; i < N; i++) {
       const c = contents[i];
       add(7 + 2 * i, '<< /Length ' + c.length + ' >>\nstream\n' + c + '\nendstream');
-      add(6 + 2 * i, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + (7 + 2 * i) + ' 0 R >>');
+      add(6 + 2 * i, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>' + (tpl ? ' /XObject << /Im1 ' + (6 + 2 * N) + ' 0 R >>' : '') + ' >> /Contents ' + (7 + 2 * i) + ' 0 R >>');
     }
-    const total = 6 + 2 * N;
+    let total = 6 + 2 * N;
+    if (tpl) {
+      let bin = '';
+      for (let i = 0; i < tpl.length; i += 8192) bin += String.fromCharCode.apply(null, tpl.subarray(i, i + 8192));
+      add(total, '<< /Type /XObject /Subtype /Image /Width ' + TPL_W + ' /Height ' + TPL_H + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + tpl.length + ' >>\nstream\n' + bin + '\nendstream');
+      total++;
+    }
     const xr = out.length;
     out += 'xref\n0 ' + total + '\n0000000000 65535 f \n';
     for (let id = 1; id < total; id++) out += String(off[id]).padStart(10, '0') + ' 00000 n \n';
@@ -2334,14 +2365,14 @@ class Component extends DCLogic {
     v.onPdf = async () => {
       this.upd({ dlMsg: 'Generando PDF…', reportOpen: true });
       try {
-        const u8 = this.pdfBuild(this.buildReport());
+        const u8 = this.pdfBuild(this.buildReport(), await this.loadTemplate());
         await this.saveFile('Informe_Auditoria_HILA_' + this.today() + '.pdf', u8, 'application/pdf');
       } catch (e) { this.upd({ dlMsg: 'No fue posible generar el PDF.' }); }
     };
     v.onDocx = async () => {
       this.upd({ dlMsg: 'Generando documento Word…', reportOpen: true });
       try {
-        const u8 = this.docxBuild(this.buildReport());
+        const u8 = this.docxBuild(this.buildReport(), await this.loadTemplate());
         await this.saveFile('Informe_Auditoria_HILA_' + this.today() + '.docx', u8, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       } catch (e) { this.upd({ dlMsg: 'No fue posible generar el documento Word.' }); }
     };
