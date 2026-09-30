@@ -271,7 +271,7 @@ textarea.cl-in{resize:vertical;min-height:58px}
 <div class="al al-info" style="flex-direction:column;gap:6px;"><div><strong>Base normativa permanente.</strong> Se carga siempre, sin tener que subirla:</div><div>· NTC-ISO 9001:2015, NTC-ISO 14001:2015 e ISO 45001:2018 (capítulos 4 a 10) → etapa 2, Requisito: norma, numeral y requisito.</div><div>· PR13_GQ V4 Gestión de riesgos → etapa 5, Riesgo: escalas de probabilidad e impacto, zonas y acciones.</div></div>
 <sc-if value="{{baseLoading}}" hint-placeholder-val="{{false}}"><div class="small muted">Cargando la base normativa permanente…</div></sc-if>
 <sc-if value="{{baseError}}" hint-placeholder-val="{{false}}"><div class="al al-warn"><span class="al-tag">Base no disponible</span><span>No se pudo cargar la base normativa permanente en esta vista. Puede cargar las normas manualmente abajo.</span></div></sc-if>
-<div class="small muted">Puede agregar otros documentos (procedimientos, manuales, guías, protocolos) y asignarlos a Requisito, Riesgo o Solo consulta. Formatos: PDF con texto, DOCX, TXT, MD, CSV, HTML. Si un PDF no se lee bien, pegue su texto abajo. Nada externo a estos documentos se usa como criterio.</div>
+<div class="small muted">Puede agregar otros documentos (procedimientos, manuales, guías, protocolos) y asignarlos a Requisito, Riesgo o Solo consulta. Formatos: PDF con texto, DOCX, TXT, MD, CSV, HTML. Nada externo a estos documentos se usa como criterio.</div>
 <div class="drop">
 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0B5A66" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"></path><path d="M14 3v5h5"></path><path d="M9 13h7M9 17h7"></path></svg>
 <div style="font-weight:600;color:#0B4650;margin-top:6px;">Cargar normas y documentos</div>
@@ -299,14 +299,6 @@ textarea.cl-in{resize:vertical;min-height:58px}
 </sc-for>
 </div>
 </sc-if>
-<div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid #E4E0D3;padding-top:16px;">
-<div class="lbl">Pegar texto de un documento</div>
-<label class="small muted" for="paste-name">Nombre del documento (se cita así en el informe)</label>
-<input id="paste-name" type="text" class="field" placeholder="Ej.: nombre y versión del documento" value="{{pasteName}}" onChange="{{onPasteName}}">
-<label class="small muted" for="paste-text">Texto completo del documento</label>
-<textarea id="paste-text" class="field" style="min-height:100px;" placeholder="Pegue aquí el texto de la norma o procedimiento" value="{{pasteText}}" onChange="{{onPasteText}}"></textarea>
-<div><button type="button" class="btn btn-ghost" onClick="{{onPasteAdd}}">Agregar documento</button></div>
-</div>
 </section>
 </sc-if>
 </div>
@@ -1160,7 +1152,7 @@ class Component extends DCLogic {
         const r = await this.readAny(f);
         const t = (r.text || '').trim();
         if (!t || (r.kind === 'PDF' && !this.textQuality(t))) {
-          msgs.push('«' + f.name + '»: no se pudo extraer texto confiable (' + r.kind + '). Copie el texto de la norma y péguelo en el recuadro «Pegar texto de un documento».');
+          msgs.push('«' + f.name + '»: no se pudo extraer texto confiable (' + r.kind + '). Cargue una versión del documento con texto seleccionable (PDF con texto, DOCX o TXT).');
           continue;
         }
         const doc = this.addDoc(f.name.replace(/\.[^.]+$/, ''), t, r.kind === 'PDF' ? 'Texto extraído automáticamente de un PDF: puede contener errores de lectura. Contraste siempre con el documento original.' : '');
