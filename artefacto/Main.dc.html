@@ -621,31 +621,10 @@ textarea.cl-in{resize:vertical;min-height:58px}
 <div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid #E4E0D3;padding-top:16px;">
 <div class="lbl">Conclusión final de la auditoría (así aparece al final del informe)</div>
 <div class="quote" style="text-align:justify;">{{finalConc}}</div>
-<sc-if value="{{finalConcIsAuto}}" hint-placeholder-val="{{true}}"><div class="small muted">Redactada automáticamente con los datos de la matriz: adecuación (no conformidades), conveniencia (fortalezas) y eficiencia (observaciones y oportunidades de mejora). Si en la conclusión integrada ISO 19011 marca un juicio, se usa ese juicio. Para reemplazarla, escriba su propia conclusión abajo.</div></sc-if>
+<sc-if value="{{finalConcIsAuto}}" hint-placeholder-val="{{true}}"><div class="small muted">Redactada automáticamente con los datos de la matriz: adecuación (no conformidades), conveniencia (fortalezas) y eficiencia (observaciones y oportunidades de mejora). Para reemplazarla, escriba su propia conclusión abajo.</div></sc-if>
 </div>
 <label class="lbl" for="conc-final">Conclusión del auditor (opcional: si la escribe, reemplaza la conclusión automática en el informe)</label>
 <textarea id="conc-final" class="field" style="min-height:110px;" placeholder="Escriba aquí la conclusión profesional de la auditoría" value="{{concFinalVal}}" onChange="{{onConcFinal}}"></textarea>
-</section>
-
-<section class="panel" style="display:flex;flex-direction:column;gap:18px;" aria-label="Conclusión integrada">
-<div><div class="eyebrow">ISO 19011</div><h2 class="h2">Conclusión integrada: adecuación, conveniencia y eficiencia</h2></div>
-<sc-if value="{{noIso}}" hint-placeholder-val="{{true}}"><div class="al al-warn"><span class="al-tag">Requiere ISO 19011</span><span>Esta conclusión se habilita cuando la norma ISO 19011 está cargada como documento. Cárguela en la fuente normativa.</span></div></sc-if>
-<sc-if value="{{isoLoaded}}" hint-placeholder-val="{{false}}">
-<div style="display:flex;flex-wrap:wrap;gap:16px;">
-<sc-for list="{{dims}}" as="d" hint-placeholder-count="3">
-<div style="flex:1 1 320px;min-width:0;border:1px solid #D9D5C9;border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;background:#FBFAF6;">
-<div class="h3">{{d.title}}</div>
-<div><div class="lbl">Base cuantitativa de la matriz</div><div class="small" style="margin-top:4px;">{{d.base}}</div></div>
-<div><div class="lbl">Referencia en la ISO 19011 cargada</div><div class="small muted" style="margin-top:4px;white-space:pre-line;">{{d.refsText}}</div></div>
-<div><div class="lbl">Juicio del auditor</div>
-<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
-<sc-for list="{{d.opts}}" as="o" hint-placeholder-count="4"><button type="button" class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for>
-</div></div>
-<div><div class="lbl">Justificación</div><textarea class="field" style="min-height:90px;margin-top:6px;" aria-label="Justificación del auditor" placeholder="Fundamente el juicio con los hallazgos" value="{{d.note}}" onChange="{{d.onNote}}"></textarea></div>
-</div>
-</sc-for>
-</div>
-</sc-if>
 </section>
 </sc-if>
 
@@ -1753,21 +1732,17 @@ class Component extends DCLogic {
     const W = ['cero', 'una', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez'];
     const pl = (n, a, b) => (n <= 10 ? W[n] : String(n)) + ' ' + (n === 1 ? a : b);
     const vb = (n, a, b) => (n === 1 ? a : b);
-    const J = { 'Favorable': 'favorable', 'Favorable con reservas': 'favorable con reservas', 'Desfavorable': 'desfavorable' };
     const NORMAS = 'frente a los requisitos de las normas NTC-ISO 9001:2015, NTC-ISO 14001:2015 e ISO 45001:2018';
     const ncNums = s.findings.filter((f) => f.cls === 'NC' && f.numeral).map((f) => 'numeral ' + f.numeral + ' de la ' + this.normShort(f.norma));
     let ade;
-    if (s.conc.adeJ) ade = 'presenta una adecuación ' + J[s.conc.adeJ] + ' ' + NORMAS;
-    else if (c.NC) ade = 'es adecuado de manera parcial ' + NORMAS + ', toda vez que se ' + vb(c.NC, 'identificó ', 'identificaron ') + pl(c.NC, 'no conformidad', 'no conformidades') + (ncNums.length ? ' (' + ncNums.join('; ') + ')' : '');
+    if (c.NC) ade = 'es adecuado de manera parcial ' + NORMAS + ', toda vez que se ' + vb(c.NC, 'identificó ', 'identificaron ') + pl(c.NC, 'no conformidad', 'no conformidades') + (ncNums.length ? ' (' + ncNums.join('; ') + ')' : '');
     else ade = 'es adecuado ' + NORMAS + ', al no evidenciarse incumplimientos de los requisitos evaluados';
     let conv;
-    if (s.conc.convJ) conv = 'su conveniencia se valora como ' + J[s.conc.convJ];
-    else if (c.FO) conv = 'resulta conveniente para la institución, como lo ' + vb(c.FO, 'demuestra ', 'demuestran ') + pl(c.FO, 'fortaleza identificada', 'fortalezas identificadas');
+    if (c.FO) conv = 'resulta conveniente para la institución, como lo ' + vb(c.FO, 'demuestra ', 'demuestran ') + pl(c.FO, 'fortaleza identificada', 'fortalezas identificadas');
     else conv = 'su conveniencia requiere fortalecerse, al no identificarse fortalezas en los procesos auditados';
     const pend = c.OB + c.OM;
     let efi;
-    if (s.conc.efiJ) efi = 'su eficiencia se valora como ' + J[s.conc.efiJ];
-    else if (pend) efi = 'su eficiencia puede mejorarse, considerando ' + [c.OB ? pl(c.OB, 'observación', 'observaciones') : '', c.OM ? pl(c.OM, 'oportunidad de mejora', 'oportunidades de mejora') : ''].filter(Boolean).join(' y ') + ' que ' + vb(pend, 'requiere', 'requieren') + ' atención';
+    if (pend) efi = 'su eficiencia puede mejorarse, considerando ' + [c.OB ? pl(c.OB, 'observación', 'observaciones') : '', c.OM ? pl(c.OM, 'oportunidad de mejora', 'oportunidades de mejora') : ''].filter(Boolean).join(' y ') + ' que ' + vb(pend, 'requiere', 'requieren') + ' atención';
     else if (c.NC) efi = 'su eficiencia depende del cierre oportuno de las acciones correctivas';
     else efi = 'es eficiente en el uso de los recursos para lograr los resultados previstos';
     const proc = (s.metaProc || '').trim();
