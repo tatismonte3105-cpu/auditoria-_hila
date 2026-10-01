@@ -514,10 +514,7 @@ textarea.cl-in{resize:vertical;min-height:58px}
 <section class="stage">
 <div class="stage-n" aria-hidden="true">7</div>
 <div class="stage-body">
-<div><div class="eyebrow">Conclusión</div><div class="h3">Conclusión del hallazgo</div></div>
-<div style="display:flex;flex-direction:column;gap:6px;">
-<sc-for list="{{stageConc}}" as="t" hint-placeholder-count="4"><div>{{t.text}}</div></sc-for>
-</div>
+<div><div class="eyebrow">Conclusión</div></div>
 <div><button type="button" class="btn btn-big" disabled="{{registerDisabled}}" onClick="{{onRegister}}">{{registerLabel}}</button></div>
 </div>
 </section>
@@ -611,23 +608,6 @@ textarea.cl-in{resize:vertical;min-height:58px}
 </section>
 </sc-if>
 
-<sc-if value="{{vConclusion}}" hint-placeholder-val="{{false}}">
-<section class="panel" style="display:flex;flex-direction:column;gap:18px;" aria-label="Conclusión final">
-<div><div class="eyebrow">Conclusión</div><h2 class="h2">Conclusión final</h2></div>
-<div class="small muted">Redactada solo con los datos de la matriz. Es un resumen objetivo: el juicio profesional lo agrega el auditor.</div>
-<div style="display:flex;flex-direction:column;gap:8px;">
-<sc-for list="{{concFactual}}" as="t" hint-placeholder-count="4"><div>{{t.text}}</div></sc-for>
-</div>
-<div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid #E4E0D3;padding-top:16px;">
-<div class="lbl">Conclusión final de la auditoría (así aparece al final del informe)</div>
-<div class="quote" style="text-align:justify;">{{finalConc}}</div>
-<sc-if value="{{finalConcIsAuto}}" hint-placeholder-val="{{true}}"><div class="small muted">Redactada automáticamente con los datos de la matriz: adecuación (no conformidades), conveniencia (fortalezas) y eficiencia (observaciones y oportunidades de mejora). Para reemplazarla, escriba su propia conclusión abajo.</div></sc-if>
-</div>
-<label class="lbl" for="conc-final">Conclusión del auditor (opcional: si la escribe, reemplaza la conclusión automática en el informe)</label>
-<textarea id="conc-final" class="field" style="min-height:110px;" placeholder="Escriba aquí la conclusión profesional de la auditoría" value="{{concFinalVal}}" onChange="{{onConcFinal}}"></textarea>
-</section>
-</sc-if>
-
 <sc-if value="{{vInforme}}" hint-placeholder-val="{{false}}">
 <section class="panel" style="display:flex;flex-direction:column;gap:18px;" aria-label="Informe">
 <div><div class="eyebrow">Informe</div><h2 class="h2">Informe de auditoría</h2></div>
@@ -641,7 +621,7 @@ textarea.cl-in{resize:vertical;min-height:58px}
 <div><label class="small" for="m-obj">Objetivo</label><textarea id="m-obj" class="field" style="min-height:80px;" value="{{metaObjetivo}}" onChange="{{onMetaObjetivo}}"></textarea></div>
 <div><label class="small" for="m-alc">Alcance</label><textarea id="m-alc" class="field" style="min-height:80px;" placeholder="Ej.: La auditoría abarcó los procesos de Compras, Calidad, Urgencias…" value="{{metaAlcance}}" onChange="{{onMetaAlcance}}"></textarea></div>
 <div><label class="small" for="m-rec">Recomendaciones (una por línea)</label><textarea id="m-rec" class="field" style="min-height:110px;" placeholder="Si lo deja vacío, se usan los controles recomendados por el auditor en la etapa 6 de cada hallazgo" value="{{recomText}}" onChange="{{onRecomText}}"></textarea></div>
-<div class="small muted">Criterios de auditoría, fortalezas, oportunidades de mejora, observaciones y no conformidades se toman de la matriz consolidada. La conclusión final se redacta en la pestaña Conclusión.</div>
+<div class="small muted">Criterios de auditoría, fortalezas, oportunidades de mejora, observaciones y no conformidades se toman de la matriz consolidada. La conclusión final se redacta automáticamente con los datos de la matriz (adecuación, conveniencia y eficiencia).</div>
 <div style="display:flex;flex-wrap:wrap;gap:12px;">
 <button type="button" class="btn btn-big" onClick="{{onGenReport}}">GENERAR INFORME</button>
 <button type="button" class="btn btn-ghost btn-big" onClick="{{onPdf}}">DESCARGAR INFORME PDF</button>
@@ -1728,7 +1708,6 @@ class Component extends DCLogic {
   // Conclusión final breve con adecuación, conveniencia y eficiencia en un solo párrafo.
   finalConclusion() {
     const s = this._st;
-    if ((s.concFinal || '').trim()) return s.concFinal.trim();
     const st = this.stats();
     if (!st.n) return 'No es posible emitir la conclusión final: no hay hallazgos registrados en la matriz consolidada.';
     const c = st.counts;
@@ -2073,8 +2052,7 @@ class Component extends DCLogic {
     const st = this.stats();
     const setF = (k) => (e) => { const v = e.target.value; this.upd({ [k]: v }); };
     const tabDefs = [
-      ['texto', 'TEXTO', ''], ['imagen', 'IMAGEN', 'image/*'], ['pdf', 'PDF', '.pdf,application/pdf'],
-      ['mp3', 'MP3', '.mp3,audio/mpeg'], ['mp4', 'MP4', '.mp4,video/mp4'], ['video', 'VIDEO', 'video/*,.mov,.avi,.mkv,.webm,.m4v']
+      ['texto', 'TEXTO', ''], ['pdf', 'PDF', '.pdf,application/pdf']
     ];
     const tabHints = {
       texto: 'Escriba o pegue el hallazgo tal como lo redactó en campo. La aplicación no agrega hechos que usted no haya escrito.',
@@ -2096,7 +2074,7 @@ class Component extends DCLogic {
 
     const navDefs = [
       ['lista', 'LISTA DE VERIFICACIÓN DE AUDITORIAS INTERNAS', 0], ['hallazgo', 'Nuevo hallazgo', 0], ['docs', 'Normas y documentos', s.lib.length], ['resultados', 'Resultados', 0],
-      ['matriz', 'Matriz consolidada', st.n], ['conclusion', 'Conclusión', 0], ['informe', 'Informe', 0]
+      ['matriz', 'Matriz consolidada', st.n], ['informe', 'Informe', 0]
     ];
     v.navTabs = navDefs.map((n) => ({ label: n[1], cnt: n[2], hasCnt: n[2] > 0, on: s.view === n[0], cls: s.view === n[0] ? 'navt navt-on' : 'navt', pick: () => this.setView(n[0]) }));
     v.vHallazgo = s.view === 'hallazgo';
@@ -2136,7 +2114,6 @@ class Component extends DCLogic {
     v.vDocs = s.view === 'docs';
     v.vResultados = s.view === 'resultados';
     v.vMatriz = s.view === 'matriz';
-    v.vConclusion = s.view === 'conclusion';
     v.vInforme = s.view === 'informe';
     v.goDocs = () => this.setView('docs');
 
